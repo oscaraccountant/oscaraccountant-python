@@ -1,0 +1,2 @@
+# The wheel and the sdist of `uv build`.
+dist/

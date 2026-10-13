@@ -1,0 +1,131 @@
+[project]
+name = "oscaraccountant"
+version = "0.1.0"
+description = "The Python SDK of the Oscar accounting API."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "OscarAI OÜ" }]
+requires-python = ">=3.11"
+dependencies = [
+    "httpx>=0.28,<1",
+    "pydantic>=2.11,<3",
+]
+keywords = ["accounting", "api", "bookkeeping", "estonia", "invoices", "oscar", "sdk"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Office/Business :: Financial :: Accounting",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://oscaraccountant.com"
+Documentation = "https://oscaraccountant.com/docs"
+Repository = "https://github.com/oscaraccountant/oscaraccountant-python"
+Issues = "https://github.com/oscaraccountant/oscaraccountant-python/issues"
+Changelog = "https://github.com/oscaraccountant/oscaraccountant-python/blob/main/CHANGELOG.md"
+
+[build-system]
+requires = ["uv_build>=0.12.16,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "oscaraccountant"
+
+[dependency-groups]
+dev = [
+    "mypy>=2.3.1,<3",
+    "pytest>=9.1.1,<10",
+    "pytest-cov>=7.1.0,<8",
+    "respx>=0.22,<1",
+    "ruff>=0.16.8,<0.17",
+]
+
+# ---------------------------------------------------------------------------
+# ruff
+# ---------------------------------------------------------------------------
+[tool.ruff]
+# The oldest Python the SDK supports.
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "W", "I", "N", "UP", "YTT", "S", "B", "C4", "T10", "T20", "ISC", "ICN", "G", "PIE", "PT",
+    "RSE", "RET", "SLF", "SIM", "TID", "TC", "ARG", "PTH", "ERA", "PGH", "PL", "TRY", "FLY", "PERF",
+    "RUF", "ASYNC",
+]
+ignore = [
+    "ISC001",  # implicit string concatenation - conflicts with the formatter
+    "E501",    # line length - the formatter decides
+    "S101",    # assert - pytest
+    "S105",    # possible hardcoded password - false positives
+    "S106",
+    "S107",
+    "PLR0913", # too many arguments
+    "PLR2004", # magic value in comparison
+    "TRY003",  # long messages outside the exception class
+    "TC001",   # typing-only imports - kept at run time
+    "TC002",
+    "TC003",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["ARG001", "ARG002", "ARG005", "S", "TRY301", "SLF001", "PLR0915", "PLC0415", "T20"]
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+skip-magic-trailing-comma = false
+
+# ---------------------------------------------------------------------------
+# mypy
+# ---------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unreachable = true
+files = ["src", "tests"]
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["tests.*", "conftest"]
+# Test functions are untyped; their bodies are not type checked.
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
+check_untyped_defs = false
+
+# ---------------------------------------------------------------------------
+# pytest and coverage
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--strict-markers"]
+markers = [
+    "integration: the SDK against the mock server of the API over real HTTP; skipped when the mock server is not available",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["src/oscaraccountant"]
+# The generated code is tested by the generator and by the conformance cases.
+omit = ["src/oscaraccountant/generated/*"]
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
+skip_covered = true
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "\\.\\.\\.$",
+]
