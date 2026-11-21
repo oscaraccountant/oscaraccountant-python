@@ -22,10 +22,17 @@ from oscaraccountant import Oscar
 
 oscar = Oscar()  # reads OSCAR_API_KEY
 
-me = oscar.me.retrieve()
+company = next(iter(oscar.companies.list()))
+company_id = company.id
+
 for invoice in oscar.invoices.list(company_id, state='issued'):
     print(invoice.id, invoice.state)
 ```
+
+`oscar.companies.list()` gives the companies of the credential. The examples
+below use `company_id` from this step. A list is
+newest first, and a credential may see several companies: pick the company
+you mean, for example by `company.name` or `company.registry_code`.
 
 The async client has the same resources and methods:
 
@@ -35,13 +42,13 @@ import asyncio
 from oscaraccountant import AsyncOscar
 
 
-async def main() -> None:
+async def main(company_id: str) -> None:
     async with AsyncOscar() as oscar:
         async for invoice in oscar.invoices.list(company_id, state='issued'):
             print(invoice.id)
 
 
-asyncio.run(main())
+asyncio.run(main(company_id))
 ```
 
 Close a client when you do not need it any more: `oscar.close()`,
@@ -64,11 +71,15 @@ An empty string counts as not set. The client sends the credential as
 ### Use the login of the `oscar` CLI
 
 On a developer machine, you can use the login of the `oscar` CLI instead of
-an API key:
+an API key. Install the CLI and log in once:
 
 ```bash
-npx @oscaraccountant/cli login
+npm install -g @oscaraccountant/cli   # or: cargo install oscaraccountant-cli
+oscar login
 ```
+
+The SDK runs `oscar` from `PATH`, so a login with `npx` alone does not serve
+it.
 
 ```python
 oscar = Oscar(credential='cli')  # or set OSCAR_USE_CLI_LOGIN=1
@@ -132,12 +143,23 @@ The models and the enums are in `oscaraccountant.types`:
 
 ```python
 from oscaraccountant.types import BooksInvoice, BooksInvoiceStateEnum
+
+invoices = oscar.invoices.list(company_id, state=BooksInvoiceStateEnum.RECORDED)
+for invoice in invoices:
+    if invoice.state == BooksInvoiceStateEnum.RECORDED:
+        print(invoice.id, invoice.state.value)  # 'recorded'
 ```
+
+The name of an enum member is UPPER_CASE: `BooksInvoiceStateEnum.RECORDED`,
+not `BooksInvoiceStateEnum.recorded`. The value of the member is the string
+on the wire, `'recorded'`. An enum is a `str`, so a member is also equal to
+its string.
 
 A model keeps a field that this version of the SDK does not know. An enum
 accepts a value that this version does not know: the value becomes a member
-named `_unknown`, so a new value of the server does not break your code.
-Money is a decimal string, never a float.
+named `_unknown`, with the string of the server as its value, so a new value
+of the server does not break your code. Money is a decimal string, never a
+float.
 
 ## Pagination
 
@@ -159,6 +181,17 @@ invoices`, and `async for page in invoices.pages()`.
 The paginator sends a request only when you need the next item. Each page is
 a separate `GET` with its own retries.
 
+The type of the paginator is `SyncPaginator[Page, Item]`, and
+`AsyncPaginator[Page, Item]` with `AsyncOscar`. Import them from
+`oscaraccountant` to annotate a variable:
+
+```python
+from oscaraccountant import SyncPaginator
+from oscaraccountant.types import BooksInvoice, BooksInvoicePage
+
+invoices: SyncPaginator[BooksInvoicePage, BooksInvoice] = oscar.invoices.list(company_id)
+```
+
 ## Errors
 
 Every error derives from `OscarError`.
@@ -178,6 +211,7 @@ Every error derives from `OscarError`.
 | `TimeoutError` | An attempt ran out of time |
 | `ResponseValidationError` | A success response that does not match its type |
 | `ConfigurationError` | An option that the client cannot use |
+| `UsageError` | A path value that is empty, `.` or `..`. The client raises it before it sends a request |
 
 `ConnectionError` and `TimeoutError` are the classes of `oscaraccountant`, not
 the builtins of the same name.
@@ -267,30 +301,10 @@ oscar = Oscar(
 )
 ```
 
-## Development
+## Contributing
 
-The resources and the models in `src/oscaraccountant/generated/` are generated
-from the OpenAPI schema of the API. Do not edit them. The hand-written
-runtime is the rest of `src/oscaraccountant/`.
-
-The gates:
-
-```bash
-uv sync
-uv run ruff check .
-uv run ruff format --check .
-uv run mypy
-uv run pytest --cov      # coverage gate: 90 percent
-uv build
-```
-
-`uv run pytest` also has two suites that need files of the source repository
-of Oscar. In this repository they are skipped:
-
-| Suite | What it does |
-|---|---|
-| `tests/test_conformance.py` | Plays every conformance case of the shared client rules with the sync and the async client, with `respx` as the HTTP mock. The runner is `tests/conformance.py` |
-| `tests/integration/` (marker `integration`) | Starts the mock server of the API as a process on a free port and calls every operation over real HTTP: pagination, errors, retries, timeouts, idempotency, upload, download, and the login of the CLI with a fake `oscar` on `PATH` |
+The source, the issues and the changes are at
+<https://github.com/oscaraccountant/oscaraccountant-python>.
 
 ## Documentation
 

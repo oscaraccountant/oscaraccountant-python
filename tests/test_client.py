@@ -25,7 +25,7 @@ from oscaraccountant.generated import JsonBody
 from oscaraccountant.types import StoredDocument
 
 from .conftest import BASE, KEY
-from .helpers import ORGANIZATION, STORED, Thing, problem, spec
+from .helpers import COMPANY, STORED, Thing, problem, spec
 
 
 @pytest.fixture
@@ -258,12 +258,12 @@ def test_download_error_is_read_and_retried(api, client, hooks):
 
 
 def test_generated_resource_pagination(api, client):
-    route = api.get('/api/organizations/')
+    route = api.get('/api/companies/')
     route.side_effect = [
-        httpx.Response(200, json={'items': [ORGANIZATION], 'next_cursor': 'c2'}),
-        httpx.Response(200, json={'items': [dict(ORGANIZATION, id='o2')], 'next_cursor': None}),
+        httpx.Response(200, json={'items': [COMPANY], 'next_cursor': 'c2'}),
+        httpx.Response(200, json={'items': [dict(COMPANY, id='c2')], 'next_cursor': None}),
     ]
-    assert [item.id for item in client.organizations.list(limit=1)] == ['o1', 'o2']
+    assert [item.id for item in client.companies.list(limit=1)] == ['c1', 'c2']
     assert [dict(call.request.url.params) for call in route.calls] == [{'limit': '1'}, {'limit': '1', 'cursor': 'c2'}]
 
 

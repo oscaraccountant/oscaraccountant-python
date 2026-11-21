@@ -44,14 +44,21 @@ STORED = {
     'uploaded_by': None,
     'created_at': '2026-09-27T10:00:00Z',
     'origin': None,
+    'deleted_at': None,
 }
 
-ORGANIZATION = {
-    'id': 'o1',
+COMPANY = {
+    'id': 'c1',
     'name': 'Example OÜ',
-    'role': 'owner',
-    'permissions': [],
-    'companies': [],
+    'registry_code': '12345678',
+    'vat_number': '',
+    'vat_status': 'not_registered',
+    'vat_status_from': None,
+    'legal_form': 'ou',
+    'files_tsd_monthly': False,
+    'state': 'ready',
+    'core_company_id': None,
+    'base_currency': 'EUR',
     'created_at': '2026-09-27T10:00:00Z',
     'updated_at': '2026-09-27T10:00:00Z',
 }

@@ -35,9 +35,15 @@ from oscaraccountant import (
 from oscaraccountant.types import (
     CancelInvoiceBodyRequest,
     CreatePartyPayloadRequest,
+    FileDeleteRequest,
     IssueInvoiceBodyRequest,
+    PatchedPartyUpdateRequest,
     RecordInvoicePayloadRequest,
     ReviseInvoiceBodyRequest,
+    SetDefaultInvoiceBankAccountsPayloadRequest,
+    SetInvoiceBankAccountsBodyRequest,
+    SetPartyAddressBodyRequest,
+    SubmissionRequestRequest,
 )
 
 from .conftest import MockServer
@@ -48,6 +54,7 @@ INVOICE = '01J90000000000000000000116'
 PARTY = '01J90000000000000000000179'
 DOCUMENT = '01J90000000000000000000096'
 BANK_TRANSACTION = '01J90000000000000000000029'
+BANK_ACCOUNT_ID = '01J90000000000000000000033'
 SEEDED_FILE = 'fil0000001'
 UUID_V4 = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$')
 PDF = b'%PDF-1.4\n% integration test\n'
@@ -105,7 +112,6 @@ def api_requests(server: MockServer) -> list[dict[str, Any]]:
 
 def test_every_operation(server, oscar):
     company = server.company_id
-    organization = server.organization_id
 
     # Lists: one page, and the iterator.
     assert [account.code for account in oscar.accounts.list(company)]
@@ -117,8 +123,7 @@ def test_every_operation(server, oscar):
     assert list(oscar.parties.list(company))
     assert list(oscar.periods.list(company))
     assert list(oscar.vat_codes.list(company))
-    assert [item.id for item in oscar.organizations.list()] == [organization]
-    assert [item.id for item in oscar.companies.list(organization)] == [company]
+    assert [item.id for item in oscar.companies.list()] == [company]
     assert list(oscar.files.list(company))
 
     # Single objects.
@@ -127,7 +132,6 @@ def test_every_operation(server, oscar):
     assert oscar.invoices.retrieve(company, INVOICE).id == INVOICE
     assert oscar.parties.retrieve(company, PARTY).id == PARTY
     assert oscar.companies.retrieve(company).id == company
-    assert oscar.organizations.retrieve(organization).id == organization
     assert oscar.me.retrieve().credential.kind == 'api_key'
     assert oscar.files.retrieve(company, SEEDED_FILE).id == SEEDED_FILE
 
@@ -144,6 +148,23 @@ def test_every_operation(server, oscar):
     assert [email.id for email in oscar.inbox.list_emails(company)]
     oscar.inbox.rotate(company)
 
+    # The tax account.
+    assert oscar.tax_account.balance(company).access_status == 'ok'
+
+    # The employees and the payroll.
+    assert [employee.id for employee in oscar.employees.list(company)] == ['emp0000001', 'emp0000002']
+    assert len(oscar.employees.retrieve(company, 'emp0000001').employments) == 1
+    assert len(list(oscar.employee_submissions.list(company))) == 2
+    assert oscar.employee_submissions.retrieve(company, 'sub0000001').id == 'sub0000001'
+    oscar.employee_submissions.create(
+        company,
+        SubmissionRequestRequest.model_validate(
+            {'kind': 'end', 'employment_id': 'emt0000001', 'end': {'end_date': '2026-12-31', 'reason_code': 1}}
+        ),
+    )
+    assert [run.month for run in oscar.pay_runs.list(company)] == ['2026-09', '2026-10']
+    assert len(oscar.pay_runs.retrieve(company, 'pyr0000001').employees) == 1
+
     # Commands.
     oscar.invoices.record(company, record_body())
     oscar.invoices.cancel(company, INVOICE, CancelInvoiceBodyRequest(reason='Entered twice'))
@@ -155,14 +176,24 @@ def test_every_operation(server, oscar):
     oscar.parties.create(
         company, CreatePartyPayloadRequest.model_validate({'name': 'Supplier OÜ', 'kind': 'supplier', 'country': 'EE'})
     )
+    assert oscar.parties.update(company, PARTY, body=PatchedPartyUpdateRequest(email='billing@example.com')).id
+    oscar.parties.set_address(company, PARTY, body=SetPartyAddressBodyRequest(address='Narva mnt 5, 10117 Tallinn'))
+    assert oscar.invoices.bank_accounts(company, INVOICE) is not None
+    accounts = [BANK_ACCOUNT_ID]
+    oscar.invoices.set_bank_accounts(company, INVOICE, SetInvoiceBankAccountsBodyRequest(bank_account_ids=accounts))
+    oscar.invoices.set_default_bank_accounts(
+        company, SetDefaultInvoiceBankAccountsPayloadRequest(bank_account_ids=accounts)
+    )
 
     # Files.
     stored = oscar.files.upload(company, file=('a.pdf', PDF, 'application/pdf'), kind='receipt')
     assert oscar.files.download(company, stored.id).read() == PDF
+    assert oscar.files.delete(company, stored.id, body=FileDeleteRequest(reason='Uploaded twice')) is None
+    assert oscar.files.retrieve(company, stored.id).deleted_at is not None
 
     log = api_requests(server)
     assert [entry for entry in log if entry['errors'] or entry['status'] >= 400] == []
-    assert len({entry['operation_id'] for entry in log}) == 36
+    assert len({entry['operation_id'] for entry in log}) == 48
 
 
 # ---------------------------------------------------------------------------
@@ -617,7 +648,7 @@ def test_cli_login_with_the_variable_and_a_profile(server, fake_cli, monkeypatch
     monkeypatch.setenv('OSCAR_PROFILE', 'work')
 
     with Oscar(base_url=server.url) as client:
-        client.organizations.retrieve(server.organization_id)
+        client.companies.retrieve(server.company_id)
 
     assert fake_cli.calls()[-1] == ['auth', 'token', '--json', '--base-url', server.url, '--profile', 'work']
 

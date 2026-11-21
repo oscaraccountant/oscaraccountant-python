@@ -43,6 +43,7 @@ from .models import (
     BooksGeneralLedger,
     BooksIncomeStatement,
     BooksInvoice,
+    BooksInvoiceBankAccounts,
     BooksInvoiceDetail,
     BooksInvoiceDirectionEnum,
     BooksInvoiceKindEnum,
@@ -60,6 +61,7 @@ from .models import (
     BooksVatCode,
     BooksVatCodePage,
     BooksVatPreview,
+    BooksVatSchemeEnum,
     BooksVatTreatmentEnum,
     CancelInvoiceBodyRequest,
     CommandOutcome,
@@ -67,7 +69,11 @@ from .models import (
     CompanyDetail,
     CreatePartyOutcome,
     CreatePartyPayloadRequest,
+    DocumentDirectionEnum,
     DocumentsListOrdering,
+    Employee,
+    EmployeeDetail,
+    FileDeleteRequest,
     InboundEmail,
     Inbox,
     InvoicesListOrdering,
@@ -75,15 +81,31 @@ from .models import (
     IssueInvoiceBodyRequest,
     IssueInvoiceOutcome,
     Me,
-    Organization,
     PaginatedCompanyList,
+    PaginatedEmployeeList,
     PaginatedInboundEmailList,
-    PaginatedOrganizationList,
+    PaginatedPayRunList,
     PaginatedStoredDocumentList,
+    PaginatedSubmissionList,
+    PartyRoleEnum,
+    PatchedPartyUpdateRequest,
+    PayRun,
+    PayRunDetail,
+    ReceiptStateEnum,
     RecordInvoiceOutcome,
     RecordInvoicePayloadRequest,
     ReviseInvoiceBodyRequest,
+    SetDefaultInvoiceBankAccountsOutcome,
+    SetDefaultInvoiceBankAccountsPayloadRequest,
+    SetInvoiceBankAccountsBodyRequest,
+    SetInvoiceBankAccountsOutcome,
+    SetPartyAddressBodyRequest,
+    SetPartyAddressOutcome,
     StoredDocument,
+    StoredDocumentDetail,
+    Submission,
+    SubmissionRequestRequest,
+    TaxAccountBalance,
 )
 
 
@@ -197,6 +219,7 @@ class BankTransactionsResource:
         ordering: BankTransactionsListOrdering | str | None = None,
         party_id: str | None = None,
         q: str | None = None,
+        receipt_state: ReceiptStateEnum | str | None = None,
         statement_id: str | None = None,
         status: BankTransactionsListStatus | str | None = None,
         to_explain: bool | None = None,
@@ -206,9 +229,23 @@ class BankTransactionsResource:
 
         The bank transactions with their settlement status, derived on read. Ordered by booking date.
 
-        `has_document` and `file_ids` name the uploaded files that explain a
-        transaction (an upload with `bank_transaction_id`). `to_explain=true`
-        lists the payments to explain: money out still open that no file explains.
+        `has_document` and `file_ids` name the files that explain a transaction:
+        an upload with `bank_transaction_id`, and each file of a purchase invoice
+        a payment allocation matched to it.
+
+        `to_explain=true` lists the payments to explain ("missing receipts"): every
+        payment out still open that no file of a matched invoice explains. Each
+        carries `receipt_state`: `missing`, `receipt_not_booked` (a file is linked,
+        the payment is not booked yet, `receipt_detail` says why) or
+        `invoice_not_matched` (a posted invoice fits it, only the match is missing:
+        `matched_invoice_candidates`, `match_proposal_id`). A `receipt_state` filter
+        lists one state. Both add `coverage` to the page: the bank accounts and the
+        months the answer checked, the months with no transaction and the accounts
+        with none. A month or an account outside the coverage is not checked.
+
+        A line removed from the books (`status` `retracted`) shows only for firm
+        staff. For any other caller the list leaves it out, also with
+        `status=retracted`, which then gives an empty list.
 
         `GET /api/companies/{company_id}/bank-transactions/`
         """
@@ -229,6 +266,7 @@ class BankTransactionsResource:
                     'ordering': ordering,
                     'party_id': party_id,
                     'q': q,
+                    'receipt_state': receipt_state,
                     'statement_id': statement_id,
                     'status': status,
                     'to_explain': to_explain,
@@ -252,6 +290,10 @@ class BankTransactionsResource:
         """Get a bank transaction
 
         One bank transaction with its source row, entries, allocations, the judgement on it, and its files.
+
+        A line removed from the books (`status` `retracted`) shows only for firm
+        staff. Any other caller gets the same 404 `not_found` as for an id that
+        does not exist.
 
         `GET /api/companies/{company_id}/bank-transactions/{bank_transaction_id}/`
         """
@@ -279,22 +321,21 @@ class CompaniesResource:
 
     def list(
         self,
-        organization_id: str,
         *,
         cursor: str | None = None,
         limit: int | None = None,
         options: RequestOptions | None = None,
     ) -> SyncPaginator[PaginatedCompanyList, Company]:
-        """One page of the companies, newest first.
+        """One page of the visible companies, newest first. A staff list is written to the audit log.
 
-        `GET /api/organizations/{organization_id}/companies/`
+        `GET /api/companies/`
         """
         return self._runtime.paginate(
             Request(
-                operation_id='organizations_companies_list',
+                operation_id='companies_list',
                 method='GET',
-                path='/api/organizations/{organization_id}/companies/',
-                path_params={'organization_id': organization_id},
+                path='/api/companies/',
+                path_params={},
                 query={
                     'cursor': cursor,
                     'limit': limit,
@@ -447,6 +488,8 @@ class DocumentsResource:
 
         One document record with the invoices, statements, events and VAT returns that refer to it.
 
+        `deletion` says whether the stored file can be deleted now, and what stops it (null without a stored file).
+
         `GET /api/companies/{company_id}/documents/{document_id}/`
         """
         return self._runtime.request(
@@ -465,11 +508,209 @@ class DocumentsResource:
         )
 
 
+class EmployeeSubmissionsResource:
+    """The `employee_submissions` operations."""
+
+    def __init__(self, runtime: SyncRuntime) -> None:
+        self._runtime = runtime
+
+    def create(
+        self,
+        company_id: str,
+        body: SubmissionRequestRequest,
+        *,
+        options: RequestOptions | None = None,
+    ) -> Submission:
+        """Submit a new employee, a new employment, a change, a suspension or an end, for the firm to review.
+
+        Staff review it; on approval OscarAI registers the event in TÖR. The
+        personal code of a new employee is sealed and never returned. The
+        event is checked as TÖR checks it (400 `tor_invalid_event`).
+
+        `POST /api/companies/{company_id}/employees/submissions/`
+        """
+        return self._runtime.request(
+            Request(
+                operation_id='companies_employees_submissions_create',
+                method='POST',
+                path='/api/companies/{company_id}/employees/submissions/',
+                path_params={'company_id': company_id},
+                query={},
+                body=JsonBody(body),
+                idempotent=False,
+                response='json',
+            ),
+            response_type=Submission,
+            options=options,
+        )
+
+    def list(
+        self,
+        company_id: str,
+        *,
+        cursor: str | None = None,
+        limit: int | None = None,
+        options: RequestOptions | None = None,
+    ) -> SyncPaginator[PaginatedSubmissionList, Submission]:
+        """One page of the submissions, newest first, with their status and the reason of a refusal.
+
+        `GET /api/companies/{company_id}/employees/submissions/`
+        """
+        return self._runtime.paginate(
+            Request(
+                operation_id='companies_employees_submissions_list',
+                method='GET',
+                path='/api/companies/{company_id}/employees/submissions/',
+                path_params={'company_id': company_id},
+                query={
+                    'cursor': cursor,
+                    'limit': limit,
+                },
+                body=None,
+                idempotent=False,
+                response='json',
+            ),
+            page_type=PaginatedSubmissionList,
+            item_type=Submission,
+            options=options,
+        )
+
+    def retrieve(
+        self,
+        company_id: str,
+        submission_id: str,
+        *,
+        options: RequestOptions | None = None,
+    ) -> Submission:
+        """One submission: its status, the reason of a refusal, TÖR's messages, the TÖR id once registered.
+
+        `GET /api/companies/{company_id}/employees/submissions/{submission_id}/`
+        """
+        return self._runtime.request(
+            Request(
+                operation_id='companies_employees_submissions_retrieve',
+                method='GET',
+                path='/api/companies/{company_id}/employees/submissions/{submission_id}/',
+                path_params={'company_id': company_id, 'submission_id': submission_id},
+                query={},
+                body=None,
+                idempotent=False,
+                response='json',
+            ),
+            response_type=Submission,
+            options=options,
+        )
+
+
+class EmployeesResource:
+    """The `employees` operations."""
+
+    def __init__(self, runtime: SyncRuntime) -> None:
+        self._runtime = runtime
+
+    def list(
+        self,
+        company_id: str,
+        *,
+        cursor: str | None = None,
+        limit: int | None = None,
+        options: RequestOptions | None = None,
+    ) -> SyncPaginator[PaginatedEmployeeList, Employee]:
+        """One page of the employees, newest first, each with the facts of its newest employment.
+
+        `source` `tor_external` and `registered_outside` mark what TÖR showed
+        that was not made through OscarAI. The personal code is masked.
+
+        `GET /api/companies/{company_id}/employees/`
+        """
+        return self._runtime.paginate(
+            Request(
+                operation_id='companies_employees_list',
+                method='GET',
+                path='/api/companies/{company_id}/employees/',
+                path_params={'company_id': company_id},
+                query={
+                    'cursor': cursor,
+                    'limit': limit,
+                },
+                body=None,
+                idempotent=False,
+                response='json',
+            ),
+            page_type=PaginatedEmployeeList,
+            item_type=Employee,
+            options=options,
+        )
+
+    def retrieve(
+        self,
+        company_id: str,
+        employee_id: str,
+        *,
+        options: RequestOptions | None = None,
+    ) -> EmployeeDetail:
+        """One employee, with every employment (the TÖR id and state, the suspensions) and the absences.
+
+        `GET /api/companies/{company_id}/employees/{employee_id}/`
+        """
+        return self._runtime.request(
+            Request(
+                operation_id='companies_employees_retrieve',
+                method='GET',
+                path='/api/companies/{company_id}/employees/{employee_id}/',
+                path_params={'company_id': company_id, 'employee_id': employee_id},
+                query={},
+                body=None,
+                idempotent=False,
+                response='json',
+            ),
+            response_type=EmployeeDetail,
+            options=options,
+        )
+
+
 class FilesResource:
     """The `files` operations."""
 
     def __init__(self, runtime: SyncRuntime) -> None:
         self._runtime = runtime
+
+    def delete(
+        self,
+        company_id: str,
+        file_id: str,
+        *,
+        body: FileDeleteRequest | None = None,
+        options: RequestOptions | None = None,
+    ) -> None:
+        """Delete the file for good: its bytes are removed at once, its open drafts are discarded, and the row stays
+        as a tombstone (the hash, the size, the kind, the dates) in the books and in the audit log.
+
+        Only a file that nothing in the books refers to, and that no payment match linked to a bank line: 409
+        `document_in_use` otherwise (ask your accountant). 409 `document_legal_hold` under a legal hold, 409
+        `document_system` for a file Oscar stored itself, 409 `company_data_deleted`. A 409 lists every blocker in
+        `errors` (`code`, `kind`, `id`, `state`, `label`, `detail`); the detail of the file shows them first, as
+        `deletion`.
+        A file already deleted answers 204 again. The same bytes uploaded again restore the file. The body and its
+        `reason` are optional. A repeat with the `Idempotency-Key` of a deletion answers 204 and changes nothing, also
+        after the file was restored. 503 `file_unavailable` for a restored file while the storage has not yet deleted
+        the bytes of its earlier deletion: try again later.
+
+        `POST /api/companies/{company_id}/files/{file_id}/delete/`
+        """
+        self._runtime.request_no_content(
+            Request(
+                operation_id='companies_files_delete',
+                method='POST',
+                path='/api/companies/{company_id}/files/{file_id}/delete/',
+                path_params={'company_id': company_id, 'file_id': file_id},
+                query={},
+                body=None if body is None else JsonBody(body),
+                idempotent=True,
+                response='none',
+            ),
+            options=options,
+        )
 
     def download(
         self,
@@ -478,7 +719,8 @@ class FilesResource:
         *,
         options: RequestOptions | None = None,
     ) -> BinaryResponse:
-        """The bytes of the file, after the permission check. PDF and images show inline.
+        """The bytes of the file, after the permission check. PDF and images show inline. 410 `document_deleted`
+        for a deleted file.
 
         `GET /api/companies/{company_id}/files/{file_id}/content/`
         """
@@ -505,7 +747,7 @@ class FilesResource:
         limit: int | None = None,
         options: RequestOptions | None = None,
     ) -> SyncPaginator[PaginatedStoredDocumentList, StoredDocument]:
-        """One page of the company's files, newest first. Filter: `kind`.
+        """One page of the company's files, newest first. Filter: `kind`. A deleted file is left out.
 
         `GET /api/companies/{company_id}/files/`
         """
@@ -535,8 +777,9 @@ class FilesResource:
         file_id: str,
         *,
         options: RequestOptions | None = None,
-    ) -> StoredDocument:
-        """One file.
+    ) -> StoredDocumentDetail:
+        """One file, with `deletion`: whether it can be deleted now, and what stops it. A deleted file answers with
+        its tombstone: `deleted_at` set, an empty name.
 
         `GET /api/companies/{company_id}/files/{file_id}/`
         """
@@ -551,7 +794,7 @@ class FilesResource:
                 idempotent=False,
                 response='json',
             ),
-            response_type=StoredDocument,
+            response_type=StoredDocumentDetail,
             options=options,
         )
 
@@ -564,6 +807,7 @@ class FilesResource:
         received_on: dt.date | str | None = None,
         bank_transaction_id: str | None = None,
         auto_process: bool | None = None,
+        direction: DocumentDirectionEnum | str | None = None,
         options: RequestOptions | None = None,
     ) -> StoredDocument:
         """Upload a file and record it in the books.
@@ -572,6 +816,9 @@ class FilesResource:
         within what the uploader may do. With `auto_process` (the batch import), the uploader must hold
         `invoices.write`: 403 `permission_denied` for `auto_process` without `invoices.write`, 409 `not_extractable`
         for `auto_process` on a file that is not a PDF of kind invoice, receipt or credit note.
+        `direction` names who issued the document (`sale`: the company; `purchase`: a supplier); left out, it is
+        detected. A sale opens a sales invoice draft that a person confirms; it is never booked by itself.
+        400 `direction_not_allowed` for a `direction` on a kind that is not read, or `sale` on a receipt.
         413 `file_too_large`, 400 `empty_file`, 415 `unsupported_file_type`.
 
         `POST /api/companies/{company_id}/files/`
@@ -589,6 +836,7 @@ class FilesResource:
                         'received_on': received_on,
                         'bank_transaction_id': bank_transaction_id,
                         'auto_process': auto_process,
+                        'direction': direction,
                     },
                     files={
                         'file': file,
@@ -615,11 +863,16 @@ class GeneralLedgerResource:
         account_code: str | None = None,
         date_from: dt.date | str | None = None,
         date_to: dt.date | str | None = None,
+        include_corrections: bool | None = None,
         options: RequestOptions | None = None,
     ) -> BooksGeneralLedger:
         """Get the general ledger
 
         The general ledger: each account with its lines and running balance, in the base currency.
+
+        The lines of the correction pairs (an entry whose reversal is posted, and
+        the reversal) are left out unless `include_corrections=true`; each
+        account's `hidden_corrections` counts them. The balances count every line.
 
         `GET /api/companies/{company_id}/general-ledger/`
         """
@@ -633,6 +886,7 @@ class GeneralLedgerResource:
                     'account_code': account_code,
                     'date_from': date_from,
                     'date_to': date_to,
+                    'include_corrections': include_corrections,
                 },
                 body=None,
                 idempotent=False,
@@ -739,6 +993,40 @@ class InvoicesResource:
 
     def __init__(self, runtime: SyncRuntime) -> None:
         self._runtime = runtime
+
+    def bank_accounts(
+        self,
+        company_id: str,
+        invoice_id: str,
+        *,
+        options: RequestOptions | None = None,
+    ) -> BooksInvoiceBankAccounts:
+        """Get the bank accounts an invoice prints
+
+        The bank accounts an own sales invoice prints, in print order.
+
+        A draft prints the accounts a person chose for it (`set_invoice_bank_accounts`, `source` `override`), else the
+        company default (`set_default_invoice_bank_accounts`, `default`), else every active account in the invoice
+        currency (`automatic`): the issue freezes the same list. An issued invoice answers the accounts it froze
+        (`snapshot`). `problem` names a chosen account that can no longer print: the issue refuses until the choice
+        changes. A purchase invoice is 409 `invalid_state`.
+
+        `GET /api/companies/{company_id}/invoices/{invoice_id}/bank-accounts/`
+        """
+        return self._runtime.request(
+            Request(
+                operation_id='books_invoices_bank_accounts_retrieve',
+                method='GET',
+                path='/api/companies/{company_id}/invoices/{invoice_id}/bank-accounts/',
+                path_params={'company_id': company_id, 'invoice_id': invoice_id},
+                query={},
+                body=None,
+                idempotent=False,
+                response='json',
+            ),
+            response_type=BooksInvoiceBankAccounts,
+            options=options,
+        )
 
     def cancel(
         self,
@@ -942,6 +1230,63 @@ class InvoicesResource:
             options=options,
         )
 
+    def set_bank_accounts(
+        self,
+        company_id: str,
+        invoice_id: str,
+        body: SetInvoiceBankAccountsBodyRequest,
+        *,
+        options: RequestOptions | None = None,
+    ) -> SetInvoiceBankAccountsOutcome:
+        """Set the bank accounts one draft sales invoice prints, or clear the choice to use the company default.
+
+        Runs the core command `set_invoice_bank_accounts`. Permission: `invoices.issue`. The path carries `invoice_id`.
+
+        `POST /api/companies/{company_id}/invoices/{invoice_id}/bank-accounts`
+        """
+        return self._runtime.request(
+            Request(
+                operation_id='commands_set_invoice_bank_accounts',
+                method='POST',
+                path='/api/companies/{company_id}/invoices/{invoice_id}/bank-accounts',
+                path_params={'company_id': company_id, 'invoice_id': invoice_id},
+                query={},
+                body=JsonBody(body),
+                idempotent=True,
+                response='json',
+            ),
+            response_type=SetInvoiceBankAccountsOutcome,
+            options=options,
+        )
+
+    def set_default_bank_accounts(
+        self,
+        company_id: str,
+        body: SetDefaultInvoiceBankAccountsPayloadRequest,
+        *,
+        options: RequestOptions | None = None,
+    ) -> SetDefaultInvoiceBankAccountsOutcome:
+        """Set the bank accounts the sales invoices print by default, in order.
+
+        Runs the core command `set_default_invoice_bank_accounts`. Permission: `invoices.issue`.
+
+        `POST /api/companies/{company_id}/invoice-bank-accounts`
+        """
+        return self._runtime.request(
+            Request(
+                operation_id='commands_set_default_invoice_bank_accounts',
+                method='POST',
+                path='/api/companies/{company_id}/invoice-bank-accounts',
+                path_params={'company_id': company_id},
+                query={},
+                body=JsonBody(body),
+                idempotent=True,
+                response='json',
+            ),
+            response_type=SetDefaultInvoiceBankAccountsOutcome,
+            options=options,
+        )
+
 
 class MeResource:
     """The `me` operations."""
@@ -954,9 +1299,9 @@ class MeResource:
         *,
         options: RequestOptions | None = None,
     ) -> Me:
-        """Return the caller. A staff session that sees organizations without a membership is audited.
+        """Return the caller. A staff session that sees companies without a membership is audited.
 
-        So is every read by a staff key, which sees every organization.
+        So is every read by a staff key, which sees every company.
 
         `GET /api/me/`
         """
@@ -1017,68 +1362,6 @@ class OpenItemsResource:
         )
 
 
-class OrganizationsResource:
-    """The `organizations` operations."""
-
-    def __init__(self, runtime: SyncRuntime) -> None:
-        self._runtime = runtime
-
-    def list(
-        self,
-        *,
-        cursor: str | None = None,
-        limit: int | None = None,
-        options: RequestOptions | None = None,
-    ) -> SyncPaginator[PaginatedOrganizationList, Organization]:
-        """One page of the visible organizations. A staff list is written to the audit log.
-
-        `GET /api/organizations/`
-        """
-        return self._runtime.paginate(
-            Request(
-                operation_id='organizations_list',
-                method='GET',
-                path='/api/organizations/',
-                path_params={},
-                query={
-                    'cursor': cursor,
-                    'limit': limit,
-                },
-                body=None,
-                idempotent=False,
-                response='json',
-            ),
-            page_type=PaginatedOrganizationList,
-            item_type=Organization,
-            options=options,
-        )
-
-    def retrieve(
-        self,
-        organization_id: str,
-        *,
-        options: RequestOptions | None = None,
-    ) -> Organization:
-        """Return the organization.
-
-        `GET /api/organizations/{organization_id}/`
-        """
-        return self._runtime.request(
-            Request(
-                operation_id='organizations_retrieve',
-                method='GET',
-                path='/api/organizations/{organization_id}/',
-                path_params={'organization_id': organization_id},
-                query={},
-                body=None,
-                idempotent=False,
-                response='json',
-            ),
-            response_type=Organization,
-            options=options,
-        )
-
-
 class PartiesResource:
     """The `parties` operations."""
 
@@ -1118,11 +1401,14 @@ class PartiesResource:
         company_id: str,
         *,
         cursor: str | None = None,
+        exclude_kind: BooksPartyKindEnum | str | None = None,
         external_key: str | None = None,
         include_merged: bool | None = None,
+        include_settled_external: bool | None = None,
         kind: BooksPartyKindEnum | str | None = None,
         limit: int | None = None,
         reg_code: str | None = None,
+        role: PartyRoleEnum | str | None = None,
         search: str | None = None,
         vat_number: str | None = None,
         options: RequestOptions | None = None,
@@ -1130,6 +1416,10 @@ class PartiesResource:
         """List parties
 
         The parties, ordered by their cleaned name. Merged parties are left out unless asked for.
+
+        `roles` says what each party is to the company, from its kind, its invoices and its open purchase drafts;
+        `role` filters on the roles the books derive (an open draft aside), and `exclude_kind=employee` leaves out
+        the employees, as the list of customers and suppliers does.
 
         `GET /api/companies/{company_id}/parties/`
         """
@@ -1141,11 +1431,14 @@ class PartiesResource:
                 path_params={'company_id': company_id},
                 query={
                     'cursor': cursor,
+                    'exclude_kind': exclude_kind,
                     'external_key': external_key,
                     'include_merged': include_merged,
+                    'include_settled_external': include_settled_external,
                     'kind': kind,
                     'limit': limit,
                     'reg_code': reg_code,
+                    'role': role,
                     'search': search,
                     'vat_number': vat_number,
                 },
@@ -1167,7 +1460,7 @@ class PartiesResource:
     ) -> BooksPartyDetail:
         """Get a party
 
-        One party with its defaults.
+        One party with its defaults and its roles.
 
         `GET /api/companies/{company_id}/parties/{party_id}/`
         """
@@ -1183,6 +1476,130 @@ class PartiesResource:
                 response='json',
             ),
             response_type=BooksPartyDetail,
+            options=options,
+        )
+
+    def set_address(
+        self,
+        company_id: str,
+        party_id: str,
+        *,
+        body: SetPartyAddressBodyRequest | None = None,
+        options: RequestOptions | None = None,
+    ) -> SetPartyAddressOutcome:
+        """Set the postal address of a party.
+
+        Runs the core command `set_party_address`. Permission: `parties.write`. The path carries `party_id`.
+
+        `POST /api/companies/{company_id}/parties/{party_id}/address`
+        """
+        return self._runtime.request(
+            Request(
+                operation_id='commands_set_party_address',
+                method='POST',
+                path='/api/companies/{company_id}/parties/{party_id}/address',
+                path_params={'company_id': company_id, 'party_id': party_id},
+                query={},
+                body=None if body is None else JsonBody(body),
+                idempotent=True,
+                response='json',
+            ),
+            response_type=SetPartyAddressOutcome,
+            options=options,
+        )
+
+    def update(
+        self,
+        company_id: str,
+        party_id: str,
+        *,
+        body: PatchedPartyUpdateRequest | None = None,
+        options: RequestOptions | None = None,
+    ) -> BooksPartyDetail:
+        """Edit a party
+
+        Changes the fields of the body (`parties.write`), within the lock rules of the party (`locks`): a locked field changes only with `override_reason`, from firm staff, and the change is audited (`party.lock_overridden`); a client gets 403 `override_not_allowed`. A locked field changed without one is 409 `party_field_locked`, one error per field. A staff key, an agent or an OAuth client that overrides a lock gets 403 `human_actor_required`: it proposes the command `override_party_lock`, and a person of the firm confirms it. The name of an Estonian company may take `register_name` without one. `is_confirmed: true` confirms the party; un-confirming needs a person (403 `human_actor_required`). Answers the party as `GET` does. With `Idempotency-Key`, a repeat with the same body replays.
+
+        `PATCH /api/companies/{company_id}/parties/{party_id}/`
+        """
+        return self._runtime.request(
+            Request(
+                operation_id='books_parties_update',
+                method='PATCH',
+                path='/api/companies/{company_id}/parties/{party_id}/',
+                path_params={'company_id': company_id, 'party_id': party_id},
+                query={},
+                body=None if body is None else JsonBody(body),
+                idempotent=True,
+                response='json',
+            ),
+            response_type=BooksPartyDetail,
+            options=options,
+        )
+
+
+class PayRunsResource:
+    """The `pay_runs` operations."""
+
+    def __init__(self, runtime: SyncRuntime) -> None:
+        self._runtime = runtime
+
+    def list(
+        self,
+        company_id: str,
+        *,
+        cursor: str | None = None,
+        limit: int | None = None,
+        options: RequestOptions | None = None,
+    ) -> SyncPaginator[PaginatedPayRunList, PayRun]:
+        """One page of the pay runs, newest month first, with their totals and the net pay not paid yet.
+
+        A client sees the posted runs; firm staff also the drafts and the approved ones.
+
+        `GET /api/companies/{company_id}/payroll/pay-runs/`
+        """
+        return self._runtime.paginate(
+            Request(
+                operation_id='companies_payroll_pay_runs_list',
+                method='GET',
+                path='/api/companies/{company_id}/payroll/pay-runs/',
+                path_params={'company_id': company_id},
+                query={
+                    'cursor': cursor,
+                    'limit': limit,
+                },
+                body=None,
+                idempotent=False,
+                response='json',
+            ),
+            page_type=PaginatedPayRunList,
+            item_type=PayRun,
+            options=options,
+        )
+
+    def retrieve(
+        self,
+        company_id: str,
+        pay_run_id: str,
+        *,
+        options: RequestOptions | None = None,
+    ) -> PayRunDetail:
+        """One pay run with every employee: the inputs, the gross and the net, the net not paid yet, the payments.
+
+        `GET /api/companies/{company_id}/payroll/pay-runs/{pay_run_id}/`
+        """
+        return self._runtime.request(
+            Request(
+                operation_id='companies_payroll_pay_runs_retrieve',
+                method='GET',
+                path='/api/companies/{company_id}/payroll/pay-runs/{pay_run_id}/',
+                path_params={'company_id': company_id, 'pay_run_id': pay_run_id},
+                query={},
+                body=None,
+                idempotent=False,
+                response='json',
+            ),
+            response_type=PayRunDetail,
             options=options,
         )
 
@@ -1245,6 +1662,7 @@ class ReportsResource:
         *,
         compare_date: dt.date | str | None = None,
         date: dt.date | str,
+        omit_empty: bool | None = None,
         schema: str | None = None,
         simplified: bool | None = None,
         options: RequestOptions | None = None,
@@ -1264,6 +1682,7 @@ class ReportsResource:
                 query={
                     'compare_date': compare_date,
                     'date': date,
+                    'omit_empty': omit_empty,
                     'schema': schema,
                     'simplified': simplified,
                 },
@@ -1283,6 +1702,7 @@ class ReportsResource:
         compare_to: dt.date | str | None = None,
         date_from: dt.date | str,
         date_to: dt.date | str,
+        omit_empty: bool | None = None,
         schema: str | None = None,
         simplified: bool | None = None,
         options: RequestOptions | None = None,
@@ -1304,6 +1724,7 @@ class ReportsResource:
                     'compare_to': compare_to,
                     'date_from': date_from,
                     'date_to': date_to,
+                    'omit_empty': omit_empty,
                     'schema': schema,
                     'simplified': simplified,
                 },
@@ -1312,6 +1733,42 @@ class ReportsResource:
                 response='json',
             ),
             response_type=BooksIncomeStatement,
+            options=options,
+        )
+
+
+class TaxAccountResource:
+    """The `tax_account` operations."""
+
+    def __init__(self, runtime: SyncRuntime) -> None:
+        self._runtime = runtime
+
+    def balance(
+        self,
+        company_id: str,
+        *,
+        options: RequestOptions | None = None,
+    ) -> TaxAccountBalance:
+        """The tax account from the stored copy, with its as-of time, the access status and the notices.
+
+        Nothing is read from EMTA here: the copy is refreshed every night, after
+        a filing or a tax payment, and by staff. Before the first refresh every
+        amount is null and `access_status` is `never`.
+
+        `GET /api/companies/{company_id}/tax-account/balance/`
+        """
+        return self._runtime.request(
+            Request(
+                operation_id='companies_tax_account_balance',
+                method='GET',
+                path='/api/companies/{company_id}/tax-account/balance/',
+                path_params={'company_id': company_id},
+                query={},
+                body=None,
+                idempotent=False,
+                response='json',
+            ),
+            response_type=TaxAccountBalance,
             options=options,
         )
 
@@ -1371,6 +1828,7 @@ class VatCodesResource:
         cursor: str | None = None,
         direction: BooksInvoiceDirectionEnum | str | None = None,
         limit: int | None = None,
+        special_scheme: BooksVatSchemeEnum | str | None = None,
         treatment: BooksVatTreatmentEnum | str | None = None,
         options: RequestOptions | None = None,
     ) -> SyncPaginator[BooksVatCodePage, BooksVatCode]:
@@ -1391,6 +1849,7 @@ class VatCodesResource:
                     'cursor': cursor,
                     'direction': direction,
                     'limit': limit,
+                    'special_scheme': special_scheme,
                     'treatment': treatment,
                 },
                 body=None,
@@ -1554,6 +2013,7 @@ class AsyncBankTransactionsResource:
         ordering: BankTransactionsListOrdering | str | None = None,
         party_id: str | None = None,
         q: str | None = None,
+        receipt_state: ReceiptStateEnum | str | None = None,
         statement_id: str | None = None,
         status: BankTransactionsListStatus | str | None = None,
         to_explain: bool | None = None,
@@ -1563,9 +2023,23 @@ class AsyncBankTransactionsResource:
 
         The bank transactions with their settlement status, derived on read. Ordered by booking date.
 
-        `has_document` and `file_ids` name the uploaded files that explain a
-        transaction (an upload with `bank_transaction_id`). `to_explain=true`
-        lists the payments to explain: money out still open that no file explains.
+        `has_document` and `file_ids` name the files that explain a transaction:
+        an upload with `bank_transaction_id`, and each file of a purchase invoice
+        a payment allocation matched to it.
+
+        `to_explain=true` lists the payments to explain ("missing receipts"): every
+        payment out still open that no file of a matched invoice explains. Each
+        carries `receipt_state`: `missing`, `receipt_not_booked` (a file is linked,
+        the payment is not booked yet, `receipt_detail` says why) or
+        `invoice_not_matched` (a posted invoice fits it, only the match is missing:
+        `matched_invoice_candidates`, `match_proposal_id`). A `receipt_state` filter
+        lists one state. Both add `coverage` to the page: the bank accounts and the
+        months the answer checked, the months with no transaction and the accounts
+        with none. A month or an account outside the coverage is not checked.
+
+        A line removed from the books (`status` `retracted`) shows only for firm
+        staff. For any other caller the list leaves it out, also with
+        `status=retracted`, which then gives an empty list.
 
         `GET /api/companies/{company_id}/bank-transactions/`
         """
@@ -1586,6 +2060,7 @@ class AsyncBankTransactionsResource:
                     'ordering': ordering,
                     'party_id': party_id,
                     'q': q,
+                    'receipt_state': receipt_state,
                     'statement_id': statement_id,
                     'status': status,
                     'to_explain': to_explain,
@@ -1609,6 +2084,10 @@ class AsyncBankTransactionsResource:
         """Get a bank transaction
 
         One bank transaction with its source row, entries, allocations, the judgement on it, and its files.
+
+        A line removed from the books (`status` `retracted`) shows only for firm
+        staff. Any other caller gets the same 404 `not_found` as for an id that
+        does not exist.
 
         `GET /api/companies/{company_id}/bank-transactions/{bank_transaction_id}/`
         """
@@ -1636,22 +2115,21 @@ class AsyncCompaniesResource:
 
     def list(
         self,
-        organization_id: str,
         *,
         cursor: str | None = None,
         limit: int | None = None,
         options: RequestOptions | None = None,
     ) -> AsyncPaginator[PaginatedCompanyList, Company]:
-        """One page of the companies, newest first.
+        """One page of the visible companies, newest first. A staff list is written to the audit log.
 
-        `GET /api/organizations/{organization_id}/companies/`
+        `GET /api/companies/`
         """
         return self._runtime.paginate(
             Request(
-                operation_id='organizations_companies_list',
+                operation_id='companies_list',
                 method='GET',
-                path='/api/organizations/{organization_id}/companies/',
-                path_params={'organization_id': organization_id},
+                path='/api/companies/',
+                path_params={},
                 query={
                     'cursor': cursor,
                     'limit': limit,
@@ -1804,6 +2282,8 @@ class AsyncDocumentsResource:
 
         One document record with the invoices, statements, events and VAT returns that refer to it.
 
+        `deletion` says whether the stored file can be deleted now, and what stops it (null without a stored file).
+
         `GET /api/companies/{company_id}/documents/{document_id}/`
         """
         return await self._runtime.request(
@@ -1822,11 +2302,209 @@ class AsyncDocumentsResource:
         )
 
 
+class AsyncEmployeeSubmissionsResource:
+    """The `employee_submissions` operations, async."""
+
+    def __init__(self, runtime: AsyncRuntime) -> None:
+        self._runtime = runtime
+
+    async def create(
+        self,
+        company_id: str,
+        body: SubmissionRequestRequest,
+        *,
+        options: RequestOptions | None = None,
+    ) -> Submission:
+        """Submit a new employee, a new employment, a change, a suspension or an end, for the firm to review.
+
+        Staff review it; on approval OscarAI registers the event in TÖR. The
+        personal code of a new employee is sealed and never returned. The
+        event is checked as TÖR checks it (400 `tor_invalid_event`).
+
+        `POST /api/companies/{company_id}/employees/submissions/`
+        """
+        return await self._runtime.request(
+            Request(
+                operation_id='companies_employees_submissions_create',
+                method='POST',
+                path='/api/companies/{company_id}/employees/submissions/',
+                path_params={'company_id': company_id},
+                query={},
+                body=JsonBody(body),
+                idempotent=False,
+                response='json',
+            ),
+            response_type=Submission,
+            options=options,
+        )
+
+    def list(
+        self,
+        company_id: str,
+        *,
+        cursor: str | None = None,
+        limit: int | None = None,
+        options: RequestOptions | None = None,
+    ) -> AsyncPaginator[PaginatedSubmissionList, Submission]:
+        """One page of the submissions, newest first, with their status and the reason of a refusal.
+
+        `GET /api/companies/{company_id}/employees/submissions/`
+        """
+        return self._runtime.paginate(
+            Request(
+                operation_id='companies_employees_submissions_list',
+                method='GET',
+                path='/api/companies/{company_id}/employees/submissions/',
+                path_params={'company_id': company_id},
+                query={
+                    'cursor': cursor,
+                    'limit': limit,
+                },
+                body=None,
+                idempotent=False,
+                response='json',
+            ),
+            page_type=PaginatedSubmissionList,
+            item_type=Submission,
+            options=options,
+        )
+
+    async def retrieve(
+        self,
+        company_id: str,
+        submission_id: str,
+        *,
+        options: RequestOptions | None = None,
+    ) -> Submission:
+        """One submission: its status, the reason of a refusal, TÖR's messages, the TÖR id once registered.
+
+        `GET /api/companies/{company_id}/employees/submissions/{submission_id}/`
+        """
+        return await self._runtime.request(
+            Request(
+                operation_id='companies_employees_submissions_retrieve',
+                method='GET',
+                path='/api/companies/{company_id}/employees/submissions/{submission_id}/',
+                path_params={'company_id': company_id, 'submission_id': submission_id},
+                query={},
+                body=None,
+                idempotent=False,
+                response='json',
+            ),
+            response_type=Submission,
+            options=options,
+        )
+
+
+class AsyncEmployeesResource:
+    """The `employees` operations, async."""
+
+    def __init__(self, runtime: AsyncRuntime) -> None:
+        self._runtime = runtime
+
+    def list(
+        self,
+        company_id: str,
+        *,
+        cursor: str | None = None,
+        limit: int | None = None,
+        options: RequestOptions | None = None,
+    ) -> AsyncPaginator[PaginatedEmployeeList, Employee]:
+        """One page of the employees, newest first, each with the facts of its newest employment.
+
+        `source` `tor_external` and `registered_outside` mark what TÖR showed
+        that was not made through OscarAI. The personal code is masked.
+
+        `GET /api/companies/{company_id}/employees/`
+        """
+        return self._runtime.paginate(
+            Request(
+                operation_id='companies_employees_list',
+                method='GET',
+                path='/api/companies/{company_id}/employees/',
+                path_params={'company_id': company_id},
+                query={
+                    'cursor': cursor,
+                    'limit': limit,
+                },
+                body=None,
+                idempotent=False,
+                response='json',
+            ),
+            page_type=PaginatedEmployeeList,
+            item_type=Employee,
+            options=options,
+        )
+
+    async def retrieve(
+        self,
+        company_id: str,
+        employee_id: str,
+        *,
+        options: RequestOptions | None = None,
+    ) -> EmployeeDetail:
+        """One employee, with every employment (the TÖR id and state, the suspensions) and the absences.
+
+        `GET /api/companies/{company_id}/employees/{employee_id}/`
+        """
+        return await self._runtime.request(
+            Request(
+                operation_id='companies_employees_retrieve',
+                method='GET',
+                path='/api/companies/{company_id}/employees/{employee_id}/',
+                path_params={'company_id': company_id, 'employee_id': employee_id},
+                query={},
+                body=None,
+                idempotent=False,
+                response='json',
+            ),
+            response_type=EmployeeDetail,
+            options=options,
+        )
+
+
 class AsyncFilesResource:
     """The `files` operations, async."""
 
     def __init__(self, runtime: AsyncRuntime) -> None:
         self._runtime = runtime
+
+    async def delete(
+        self,
+        company_id: str,
+        file_id: str,
+        *,
+        body: FileDeleteRequest | None = None,
+        options: RequestOptions | None = None,
+    ) -> None:
+        """Delete the file for good: its bytes are removed at once, its open drafts are discarded, and the row stays
+        as a tombstone (the hash, the size, the kind, the dates) in the books and in the audit log.
+
+        Only a file that nothing in the books refers to, and that no payment match linked to a bank line: 409
+        `document_in_use` otherwise (ask your accountant). 409 `document_legal_hold` under a legal hold, 409
+        `document_system` for a file Oscar stored itself, 409 `company_data_deleted`. A 409 lists every blocker in
+        `errors` (`code`, `kind`, `id`, `state`, `label`, `detail`); the detail of the file shows them first, as
+        `deletion`.
+        A file already deleted answers 204 again. The same bytes uploaded again restore the file. The body and its
+        `reason` are optional. A repeat with the `Idempotency-Key` of a deletion answers 204 and changes nothing, also
+        after the file was restored. 503 `file_unavailable` for a restored file while the storage has not yet deleted
+        the bytes of its earlier deletion: try again later.
+
+        `POST /api/companies/{company_id}/files/{file_id}/delete/`
+        """
+        await self._runtime.request_no_content(
+            Request(
+                operation_id='companies_files_delete',
+                method='POST',
+                path='/api/companies/{company_id}/files/{file_id}/delete/',
+                path_params={'company_id': company_id, 'file_id': file_id},
+                query={},
+                body=None if body is None else JsonBody(body),
+                idempotent=True,
+                response='none',
+            ),
+            options=options,
+        )
 
     async def download(
         self,
@@ -1835,7 +2513,8 @@ class AsyncFilesResource:
         *,
         options: RequestOptions | None = None,
     ) -> AsyncBinaryResponse:
-        """The bytes of the file, after the permission check. PDF and images show inline.
+        """The bytes of the file, after the permission check. PDF and images show inline. 410 `document_deleted`
+        for a deleted file.
 
         `GET /api/companies/{company_id}/files/{file_id}/content/`
         """
@@ -1862,7 +2541,7 @@ class AsyncFilesResource:
         limit: int | None = None,
         options: RequestOptions | None = None,
     ) -> AsyncPaginator[PaginatedStoredDocumentList, StoredDocument]:
-        """One page of the company's files, newest first. Filter: `kind`.
+        """One page of the company's files, newest first. Filter: `kind`. A deleted file is left out.
 
         `GET /api/companies/{company_id}/files/`
         """
@@ -1892,8 +2571,9 @@ class AsyncFilesResource:
         file_id: str,
         *,
         options: RequestOptions | None = None,
-    ) -> StoredDocument:
-        """One file.
+    ) -> StoredDocumentDetail:
+        """One file, with `deletion`: whether it can be deleted now, and what stops it. A deleted file answers with
+        its tombstone: `deleted_at` set, an empty name.
 
         `GET /api/companies/{company_id}/files/{file_id}/`
         """
@@ -1908,7 +2588,7 @@ class AsyncFilesResource:
                 idempotent=False,
                 response='json',
             ),
-            response_type=StoredDocument,
+            response_type=StoredDocumentDetail,
             options=options,
         )
 
@@ -1921,6 +2601,7 @@ class AsyncFilesResource:
         received_on: dt.date | str | None = None,
         bank_transaction_id: str | None = None,
         auto_process: bool | None = None,
+        direction: DocumentDirectionEnum | str | None = None,
         options: RequestOptions | None = None,
     ) -> StoredDocument:
         """Upload a file and record it in the books.
@@ -1929,6 +2610,9 @@ class AsyncFilesResource:
         within what the uploader may do. With `auto_process` (the batch import), the uploader must hold
         `invoices.write`: 403 `permission_denied` for `auto_process` without `invoices.write`, 409 `not_extractable`
         for `auto_process` on a file that is not a PDF of kind invoice, receipt or credit note.
+        `direction` names who issued the document (`sale`: the company; `purchase`: a supplier); left out, it is
+        detected. A sale opens a sales invoice draft that a person confirms; it is never booked by itself.
+        400 `direction_not_allowed` for a `direction` on a kind that is not read, or `sale` on a receipt.
         413 `file_too_large`, 400 `empty_file`, 415 `unsupported_file_type`.
 
         `POST /api/companies/{company_id}/files/`
@@ -1946,6 +2630,7 @@ class AsyncFilesResource:
                         'received_on': received_on,
                         'bank_transaction_id': bank_transaction_id,
                         'auto_process': auto_process,
+                        'direction': direction,
                     },
                     files={
                         'file': file,
@@ -1972,11 +2657,16 @@ class AsyncGeneralLedgerResource:
         account_code: str | None = None,
         date_from: dt.date | str | None = None,
         date_to: dt.date | str | None = None,
+        include_corrections: bool | None = None,
         options: RequestOptions | None = None,
     ) -> BooksGeneralLedger:
         """Get the general ledger
 
         The general ledger: each account with its lines and running balance, in the base currency.
+
+        The lines of the correction pairs (an entry whose reversal is posted, and
+        the reversal) are left out unless `include_corrections=true`; each
+        account's `hidden_corrections` counts them. The balances count every line.
 
         `GET /api/companies/{company_id}/general-ledger/`
         """
@@ -1990,6 +2680,7 @@ class AsyncGeneralLedgerResource:
                     'account_code': account_code,
                     'date_from': date_from,
                     'date_to': date_to,
+                    'include_corrections': include_corrections,
                 },
                 body=None,
                 idempotent=False,
@@ -2096,6 +2787,40 @@ class AsyncInvoicesResource:
 
     def __init__(self, runtime: AsyncRuntime) -> None:
         self._runtime = runtime
+
+    async def bank_accounts(
+        self,
+        company_id: str,
+        invoice_id: str,
+        *,
+        options: RequestOptions | None = None,
+    ) -> BooksInvoiceBankAccounts:
+        """Get the bank accounts an invoice prints
+
+        The bank accounts an own sales invoice prints, in print order.
+
+        A draft prints the accounts a person chose for it (`set_invoice_bank_accounts`, `source` `override`), else the
+        company default (`set_default_invoice_bank_accounts`, `default`), else every active account in the invoice
+        currency (`automatic`): the issue freezes the same list. An issued invoice answers the accounts it froze
+        (`snapshot`). `problem` names a chosen account that can no longer print: the issue refuses until the choice
+        changes. A purchase invoice is 409 `invalid_state`.
+
+        `GET /api/companies/{company_id}/invoices/{invoice_id}/bank-accounts/`
+        """
+        return await self._runtime.request(
+            Request(
+                operation_id='books_invoices_bank_accounts_retrieve',
+                method='GET',
+                path='/api/companies/{company_id}/invoices/{invoice_id}/bank-accounts/',
+                path_params={'company_id': company_id, 'invoice_id': invoice_id},
+                query={},
+                body=None,
+                idempotent=False,
+                response='json',
+            ),
+            response_type=BooksInvoiceBankAccounts,
+            options=options,
+        )
 
     async def cancel(
         self,
@@ -2299,6 +3024,63 @@ class AsyncInvoicesResource:
             options=options,
         )
 
+    async def set_bank_accounts(
+        self,
+        company_id: str,
+        invoice_id: str,
+        body: SetInvoiceBankAccountsBodyRequest,
+        *,
+        options: RequestOptions | None = None,
+    ) -> SetInvoiceBankAccountsOutcome:
+        """Set the bank accounts one draft sales invoice prints, or clear the choice to use the company default.
+
+        Runs the core command `set_invoice_bank_accounts`. Permission: `invoices.issue`. The path carries `invoice_id`.
+
+        `POST /api/companies/{company_id}/invoices/{invoice_id}/bank-accounts`
+        """
+        return await self._runtime.request(
+            Request(
+                operation_id='commands_set_invoice_bank_accounts',
+                method='POST',
+                path='/api/companies/{company_id}/invoices/{invoice_id}/bank-accounts',
+                path_params={'company_id': company_id, 'invoice_id': invoice_id},
+                query={},
+                body=JsonBody(body),
+                idempotent=True,
+                response='json',
+            ),
+            response_type=SetInvoiceBankAccountsOutcome,
+            options=options,
+        )
+
+    async def set_default_bank_accounts(
+        self,
+        company_id: str,
+        body: SetDefaultInvoiceBankAccountsPayloadRequest,
+        *,
+        options: RequestOptions | None = None,
+    ) -> SetDefaultInvoiceBankAccountsOutcome:
+        """Set the bank accounts the sales invoices print by default, in order.
+
+        Runs the core command `set_default_invoice_bank_accounts`. Permission: `invoices.issue`.
+
+        `POST /api/companies/{company_id}/invoice-bank-accounts`
+        """
+        return await self._runtime.request(
+            Request(
+                operation_id='commands_set_default_invoice_bank_accounts',
+                method='POST',
+                path='/api/companies/{company_id}/invoice-bank-accounts',
+                path_params={'company_id': company_id},
+                query={},
+                body=JsonBody(body),
+                idempotent=True,
+                response='json',
+            ),
+            response_type=SetDefaultInvoiceBankAccountsOutcome,
+            options=options,
+        )
+
 
 class AsyncMeResource:
     """The `me` operations, async."""
@@ -2311,9 +3093,9 @@ class AsyncMeResource:
         *,
         options: RequestOptions | None = None,
     ) -> Me:
-        """Return the caller. A staff session that sees organizations without a membership is audited.
+        """Return the caller. A staff session that sees companies without a membership is audited.
 
-        So is every read by a staff key, which sees every organization.
+        So is every read by a staff key, which sees every company.
 
         `GET /api/me/`
         """
@@ -2374,68 +3156,6 @@ class AsyncOpenItemsResource:
         )
 
 
-class AsyncOrganizationsResource:
-    """The `organizations` operations, async."""
-
-    def __init__(self, runtime: AsyncRuntime) -> None:
-        self._runtime = runtime
-
-    def list(
-        self,
-        *,
-        cursor: str | None = None,
-        limit: int | None = None,
-        options: RequestOptions | None = None,
-    ) -> AsyncPaginator[PaginatedOrganizationList, Organization]:
-        """One page of the visible organizations. A staff list is written to the audit log.
-
-        `GET /api/organizations/`
-        """
-        return self._runtime.paginate(
-            Request(
-                operation_id='organizations_list',
-                method='GET',
-                path='/api/organizations/',
-                path_params={},
-                query={
-                    'cursor': cursor,
-                    'limit': limit,
-                },
-                body=None,
-                idempotent=False,
-                response='json',
-            ),
-            page_type=PaginatedOrganizationList,
-            item_type=Organization,
-            options=options,
-        )
-
-    async def retrieve(
-        self,
-        organization_id: str,
-        *,
-        options: RequestOptions | None = None,
-    ) -> Organization:
-        """Return the organization.
-
-        `GET /api/organizations/{organization_id}/`
-        """
-        return await self._runtime.request(
-            Request(
-                operation_id='organizations_retrieve',
-                method='GET',
-                path='/api/organizations/{organization_id}/',
-                path_params={'organization_id': organization_id},
-                query={},
-                body=None,
-                idempotent=False,
-                response='json',
-            ),
-            response_type=Organization,
-            options=options,
-        )
-
-
 class AsyncPartiesResource:
     """The `parties` operations, async."""
 
@@ -2475,11 +3195,14 @@ class AsyncPartiesResource:
         company_id: str,
         *,
         cursor: str | None = None,
+        exclude_kind: BooksPartyKindEnum | str | None = None,
         external_key: str | None = None,
         include_merged: bool | None = None,
+        include_settled_external: bool | None = None,
         kind: BooksPartyKindEnum | str | None = None,
         limit: int | None = None,
         reg_code: str | None = None,
+        role: PartyRoleEnum | str | None = None,
         search: str | None = None,
         vat_number: str | None = None,
         options: RequestOptions | None = None,
@@ -2487,6 +3210,10 @@ class AsyncPartiesResource:
         """List parties
 
         The parties, ordered by their cleaned name. Merged parties are left out unless asked for.
+
+        `roles` says what each party is to the company, from its kind, its invoices and its open purchase drafts;
+        `role` filters on the roles the books derive (an open draft aside), and `exclude_kind=employee` leaves out
+        the employees, as the list of customers and suppliers does.
 
         `GET /api/companies/{company_id}/parties/`
         """
@@ -2498,11 +3225,14 @@ class AsyncPartiesResource:
                 path_params={'company_id': company_id},
                 query={
                     'cursor': cursor,
+                    'exclude_kind': exclude_kind,
                     'external_key': external_key,
                     'include_merged': include_merged,
+                    'include_settled_external': include_settled_external,
                     'kind': kind,
                     'limit': limit,
                     'reg_code': reg_code,
+                    'role': role,
                     'search': search,
                     'vat_number': vat_number,
                 },
@@ -2524,7 +3254,7 @@ class AsyncPartiesResource:
     ) -> BooksPartyDetail:
         """Get a party
 
-        One party with its defaults.
+        One party with its defaults and its roles.
 
         `GET /api/companies/{company_id}/parties/{party_id}/`
         """
@@ -2540,6 +3270,130 @@ class AsyncPartiesResource:
                 response='json',
             ),
             response_type=BooksPartyDetail,
+            options=options,
+        )
+
+    async def set_address(
+        self,
+        company_id: str,
+        party_id: str,
+        *,
+        body: SetPartyAddressBodyRequest | None = None,
+        options: RequestOptions | None = None,
+    ) -> SetPartyAddressOutcome:
+        """Set the postal address of a party.
+
+        Runs the core command `set_party_address`. Permission: `parties.write`. The path carries `party_id`.
+
+        `POST /api/companies/{company_id}/parties/{party_id}/address`
+        """
+        return await self._runtime.request(
+            Request(
+                operation_id='commands_set_party_address',
+                method='POST',
+                path='/api/companies/{company_id}/parties/{party_id}/address',
+                path_params={'company_id': company_id, 'party_id': party_id},
+                query={},
+                body=None if body is None else JsonBody(body),
+                idempotent=True,
+                response='json',
+            ),
+            response_type=SetPartyAddressOutcome,
+            options=options,
+        )
+
+    async def update(
+        self,
+        company_id: str,
+        party_id: str,
+        *,
+        body: PatchedPartyUpdateRequest | None = None,
+        options: RequestOptions | None = None,
+    ) -> BooksPartyDetail:
+        """Edit a party
+
+        Changes the fields of the body (`parties.write`), within the lock rules of the party (`locks`): a locked field changes only with `override_reason`, from firm staff, and the change is audited (`party.lock_overridden`); a client gets 403 `override_not_allowed`. A locked field changed without one is 409 `party_field_locked`, one error per field. A staff key, an agent or an OAuth client that overrides a lock gets 403 `human_actor_required`: it proposes the command `override_party_lock`, and a person of the firm confirms it. The name of an Estonian company may take `register_name` without one. `is_confirmed: true` confirms the party; un-confirming needs a person (403 `human_actor_required`). Answers the party as `GET` does. With `Idempotency-Key`, a repeat with the same body replays.
+
+        `PATCH /api/companies/{company_id}/parties/{party_id}/`
+        """
+        return await self._runtime.request(
+            Request(
+                operation_id='books_parties_update',
+                method='PATCH',
+                path='/api/companies/{company_id}/parties/{party_id}/',
+                path_params={'company_id': company_id, 'party_id': party_id},
+                query={},
+                body=None if body is None else JsonBody(body),
+                idempotent=True,
+                response='json',
+            ),
+            response_type=BooksPartyDetail,
+            options=options,
+        )
+
+
+class AsyncPayRunsResource:
+    """The `pay_runs` operations, async."""
+
+    def __init__(self, runtime: AsyncRuntime) -> None:
+        self._runtime = runtime
+
+    def list(
+        self,
+        company_id: str,
+        *,
+        cursor: str | None = None,
+        limit: int | None = None,
+        options: RequestOptions | None = None,
+    ) -> AsyncPaginator[PaginatedPayRunList, PayRun]:
+        """One page of the pay runs, newest month first, with their totals and the net pay not paid yet.
+
+        A client sees the posted runs; firm staff also the drafts and the approved ones.
+
+        `GET /api/companies/{company_id}/payroll/pay-runs/`
+        """
+        return self._runtime.paginate(
+            Request(
+                operation_id='companies_payroll_pay_runs_list',
+                method='GET',
+                path='/api/companies/{company_id}/payroll/pay-runs/',
+                path_params={'company_id': company_id},
+                query={
+                    'cursor': cursor,
+                    'limit': limit,
+                },
+                body=None,
+                idempotent=False,
+                response='json',
+            ),
+            page_type=PaginatedPayRunList,
+            item_type=PayRun,
+            options=options,
+        )
+
+    async def retrieve(
+        self,
+        company_id: str,
+        pay_run_id: str,
+        *,
+        options: RequestOptions | None = None,
+    ) -> PayRunDetail:
+        """One pay run with every employee: the inputs, the gross and the net, the net not paid yet, the payments.
+
+        `GET /api/companies/{company_id}/payroll/pay-runs/{pay_run_id}/`
+        """
+        return await self._runtime.request(
+            Request(
+                operation_id='companies_payroll_pay_runs_retrieve',
+                method='GET',
+                path='/api/companies/{company_id}/payroll/pay-runs/{pay_run_id}/',
+                path_params={'company_id': company_id, 'pay_run_id': pay_run_id},
+                query={},
+                body=None,
+                idempotent=False,
+                response='json',
+            ),
+            response_type=PayRunDetail,
             options=options,
         )
 
@@ -2602,6 +3456,7 @@ class AsyncReportsResource:
         *,
         compare_date: dt.date | str | None = None,
         date: dt.date | str,
+        omit_empty: bool | None = None,
         schema: str | None = None,
         simplified: bool | None = None,
         options: RequestOptions | None = None,
@@ -2621,6 +3476,7 @@ class AsyncReportsResource:
                 query={
                     'compare_date': compare_date,
                     'date': date,
+                    'omit_empty': omit_empty,
                     'schema': schema,
                     'simplified': simplified,
                 },
@@ -2640,6 +3496,7 @@ class AsyncReportsResource:
         compare_to: dt.date | str | None = None,
         date_from: dt.date | str,
         date_to: dt.date | str,
+        omit_empty: bool | None = None,
         schema: str | None = None,
         simplified: bool | None = None,
         options: RequestOptions | None = None,
@@ -2661,6 +3518,7 @@ class AsyncReportsResource:
                     'compare_to': compare_to,
                     'date_from': date_from,
                     'date_to': date_to,
+                    'omit_empty': omit_empty,
                     'schema': schema,
                     'simplified': simplified,
                 },
@@ -2669,6 +3527,42 @@ class AsyncReportsResource:
                 response='json',
             ),
             response_type=BooksIncomeStatement,
+            options=options,
+        )
+
+
+class AsyncTaxAccountResource:
+    """The `tax_account` operations, async."""
+
+    def __init__(self, runtime: AsyncRuntime) -> None:
+        self._runtime = runtime
+
+    async def balance(
+        self,
+        company_id: str,
+        *,
+        options: RequestOptions | None = None,
+    ) -> TaxAccountBalance:
+        """The tax account from the stored copy, with its as-of time, the access status and the notices.
+
+        Nothing is read from EMTA here: the copy is refreshed every night, after
+        a filing or a tax payment, and by staff. Before the first refresh every
+        amount is null and `access_status` is `never`.
+
+        `GET /api/companies/{company_id}/tax-account/balance/`
+        """
+        return await self._runtime.request(
+            Request(
+                operation_id='companies_tax_account_balance',
+                method='GET',
+                path='/api/companies/{company_id}/tax-account/balance/',
+                path_params={'company_id': company_id},
+                query={},
+                body=None,
+                idempotent=False,
+                response='json',
+            ),
+            response_type=TaxAccountBalance,
             options=options,
         )
 
@@ -2728,6 +3622,7 @@ class AsyncVatCodesResource:
         cursor: str | None = None,
         direction: BooksInvoiceDirectionEnum | str | None = None,
         limit: int | None = None,
+        special_scheme: BooksVatSchemeEnum | str | None = None,
         treatment: BooksVatTreatmentEnum | str | None = None,
         options: RequestOptions | None = None,
     ) -> AsyncPaginator[BooksVatCodePage, BooksVatCode]:
@@ -2748,6 +3643,7 @@ class AsyncVatCodesResource:
                     'cursor': cursor,
                     'direction': direction,
                     'limit': limit,
+                    'special_scheme': special_scheme,
                     'treatment': treatment,
                 },
                 body=None,
@@ -2811,16 +3707,19 @@ class SyncResources:
         self.companies = CompaniesResource(runtime)
         self.dimensions = DimensionsResource(runtime)
         self.documents = DocumentsResource(runtime)
+        self.employee_submissions = EmployeeSubmissionsResource(runtime)
+        self.employees = EmployeesResource(runtime)
         self.files = FilesResource(runtime)
         self.general_ledger = GeneralLedgerResource(runtime)
         self.inbox = InboxResource(runtime)
         self.invoices = InvoicesResource(runtime)
         self.me = MeResource(runtime)
         self.open_items = OpenItemsResource(runtime)
-        self.organizations = OrganizationsResource(runtime)
         self.parties = PartiesResource(runtime)
+        self.pay_runs = PayRunsResource(runtime)
         self.periods = PeriodsResource(runtime)
         self.reports = ReportsResource(runtime)
+        self.tax_account = TaxAccountResource(runtime)
         self.trial_balance = TrialBalanceResource(runtime)
         self.vat_codes = VatCodesResource(runtime)
         self.vat_preview = VatPreviewResource(runtime)
@@ -2836,16 +3735,19 @@ class AsyncResources:
         self.companies = AsyncCompaniesResource(runtime)
         self.dimensions = AsyncDimensionsResource(runtime)
         self.documents = AsyncDocumentsResource(runtime)
+        self.employee_submissions = AsyncEmployeeSubmissionsResource(runtime)
+        self.employees = AsyncEmployeesResource(runtime)
         self.files = AsyncFilesResource(runtime)
         self.general_ledger = AsyncGeneralLedgerResource(runtime)
         self.inbox = AsyncInboxResource(runtime)
         self.invoices = AsyncInvoicesResource(runtime)
         self.me = AsyncMeResource(runtime)
         self.open_items = AsyncOpenItemsResource(runtime)
-        self.organizations = AsyncOrganizationsResource(runtime)
         self.parties = AsyncPartiesResource(runtime)
+        self.pay_runs = AsyncPayRunsResource(runtime)
         self.periods = AsyncPeriodsResource(runtime)
         self.reports = AsyncReportsResource(runtime)
+        self.tax_account = AsyncTaxAccountResource(runtime)
         self.trial_balance = AsyncTrialBalanceResource(runtime)
         self.vat_codes = AsyncVatCodesResource(runtime)
         self.vat_preview = AsyncVatPreviewResource(runtime)

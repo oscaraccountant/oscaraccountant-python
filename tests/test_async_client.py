@@ -13,7 +13,7 @@ from oscaraccountant import (
 from oscaraccountant.types import StoredDocument
 
 from .conftest import BASE, KEY
-from .helpers import ORGANIZATION, STORED, Thing, problem, spec
+from .helpers import COMPANY, STORED, Thing, problem, spec
 
 pytestmark = pytest.mark.anyio
 
@@ -114,12 +114,12 @@ async def test_upload_download_and_pages(api, client):
     api.get('/api/companies/c1/files/f1/content/').respond(200, content=b'data')
     download = await client.files.download('c1', 'f1')
     assert await download.aread() == b'data'
-    route = api.get('/api/organizations/')
+    route = api.get('/api/companies/')
     route.side_effect = [
-        httpx.Response(200, json={'items': [ORGANIZATION], 'next_cursor': 'c2'}),
-        httpx.Response(200, json={'items': [dict(ORGANIZATION, id='o2')], 'next_cursor': None}),
+        httpx.Response(200, json={'items': [COMPANY], 'next_cursor': 'c2'}),
+        httpx.Response(200, json={'items': [dict(COMPANY, id='c2')], 'next_cursor': None}),
     ]
-    assert [item.id async for item in client.organizations.list()] == ['o1', 'o2']
+    assert [item.id async for item in client.companies.list()] == ['c1', 'c2']
 
 
 async def test_download_error(api, client):

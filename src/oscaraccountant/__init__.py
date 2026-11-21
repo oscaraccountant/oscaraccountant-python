@@ -32,7 +32,7 @@ from ._errors import (
 from ._files import AsyncDownload, Download
 from ._pagination import AsyncPage, SyncPage
 from ._version import __version__
-from .generated import FileInput, OpenStrEnum, OscarModel, RequestOptions
+from .generated import AsyncPaginator, FileInput, OpenStrEnum, OscarModel, RequestOptions, SyncPaginator
 
 __all__ = [
     'DEFAULT_BASE_URL',
@@ -42,6 +42,7 @@ __all__ = [
     'AsyncDownload',
     'AsyncOscar',
     'AsyncPage',
+    'AsyncPaginator',
     'AuthenticationError',
     'BadRequestError',
     'ConfigurationError',
@@ -60,6 +61,7 @@ __all__ = [
     'RequestOptions',
     'ResponseValidationError',
     'SyncPage',
+    'SyncPaginator',
     'TimeoutError',
     'UnprocessableEntityError',
     'UsageError',

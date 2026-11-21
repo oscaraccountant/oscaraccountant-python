@@ -12,6 +12,17 @@ from pydantic import Field, JsonValue
 from ._base import OpenStrEnum, OscarModel
 
 
+class AbsenceKindEnum(OpenStrEnum):
+    """* `holiday` - Holiday
+    * `sick_leave` - Sick leave
+
+    A value this client does not know becomes a member named `_unknown`.
+    """
+
+    HOLIDAY = 'holiday'
+    SICK_LEAVE = 'sick_leave'
+
+
 class BankTransactionsListOrdering(OpenStrEnum):
     """A value this client does not know becomes a member named `_unknown`."""
 
@@ -26,6 +37,8 @@ class BankTransactionsListOrdering(OpenStrEnum):
 class BankTransactionsListStatus(OpenStrEnum):
     """A value this client does not know becomes a member named `_unknown`."""
 
+    MIGRATED = 'migrated'
+    RETRACTED = 'retracted'
     UNMATCHED = 'unmatched'
     PART_MATCHED = 'part_matched'
     MATCHED = 'matched'
@@ -35,6 +48,19 @@ class BankTransactionsListStatus(OpenStrEnum):
     TRANSFER_UNMATCHED = 'transfer_unmatched'
     POSTED = 'posted'
     OPEN = 'open'
+
+
+class BasicExemptionEnum(OpenStrEnum):
+    """* `none` - No application
+    * `full` - The whole exemption
+    * `partial` - A part of the exemption
+
+    A value this client does not know becomes a member named `_unknown`.
+    """
+
+    NONE = 'none'
+    FULL = 'full'
+    PARTIAL = 'partial'
 
 
 class BooksAccountFixedAssetClassEnum(OpenStrEnum):
@@ -127,6 +153,17 @@ class BooksAllocationStateEnum(OpenStrEnum):
     REVERSED = 'reversed'
 
 
+class BooksBankCoverageUncoveredReasonEnum(OpenStrEnum):
+    """* `no_bank_lines` - no_bank_lines
+    * `feed_not_linked` - feed_not_linked
+
+    A value this client does not know becomes a member named `_unknown`.
+    """
+
+    NO_BANK_LINES = 'no_bank_lines'
+    FEED_NOT_LINKED = 'feed_not_linked'
+
+
 class BooksBankDirectionEnum(OpenStrEnum):
     """* `in` - in
     * `out` - out
@@ -139,7 +176,9 @@ class BooksBankDirectionEnum(OpenStrEnum):
 
 
 class BooksBankTransactionStatusEnum(OpenStrEnum):
-    """* `unmatched` - unmatched
+    """* `migrated` - migrated
+    * `retracted` - retracted
+    * `unmatched` - unmatched
     * `part_matched` - part_matched
     * `matched` - matched
     * `exempted` - exempted
@@ -151,6 +190,8 @@ class BooksBankTransactionStatusEnum(OpenStrEnum):
     A value this client does not know becomes a member named `_unknown`.
     """
 
+    MIGRATED = 'migrated'
+    RETRACTED = 'retracted'
     UNMATCHED = 'unmatched'
     PART_MATCHED = 'part_matched'
     MATCHED = 'matched'
@@ -216,6 +257,30 @@ class BooksDocumentKindEnum(OpenStrEnum):
     STATEMENT = 'statement'
     CONTRACT = 'contract'
     OTHER = 'other'
+
+
+class BooksDocumentReferenceClassEnum(OpenStrEnum):
+    """* `live` - live
+    * `permanent` - permanent
+    * `inactive` - inactive
+
+    A value this client does not know becomes a member named `_unknown`.
+    """
+
+    LIVE = 'live'
+    PERMANENT = 'permanent'
+    INACTIVE = 'inactive'
+
+
+class BooksDocumentStatusEventStatusEnum(OpenStrEnum):
+    """* `withdrawn` - withdrawn
+    * `reinstated` - reinstated
+
+    A value this client does not know becomes a member named `_unknown`.
+    """
+
+    WITHDRAWN = 'withdrawn'
+    REINSTATED = 'reinstated'
 
 
 class BooksEntrySourceKindEnum(OpenStrEnum):
@@ -310,6 +375,14 @@ class BooksExemptionRoleEnum(OpenStrEnum):
     * `distribution_tax_liability` - distribution_tax_liability
     * `share_capital` - share_capital
     * `legal_reserve` - legal_reserve
+    * `vat_output_oss` - vat_output_oss
+    * `vat_output_ioss` - vat_output_ioss
+    * `vat_output_gb` - vat_output_gb
+    * `vat_input_gb` - vat_input_gb
+    * `vat_output_au` - vat_output_au
+    * `vat_output_import` - vat_output_import
+    * `vat_input_import` - vat_input_import
+    * `vat_input_fixed_asset` - vat_input_fixed_asset
 
     A value this client does not know becomes a member named `_unknown`.
     """
@@ -360,6 +433,14 @@ class BooksExemptionRoleEnum(OpenStrEnum):
     DISTRIBUTION_TAX_LIABILITY = 'distribution_tax_liability'
     SHARE_CAPITAL = 'share_capital'
     LEGAL_RESERVE = 'legal_reserve'
+    VAT_OUTPUT_OSS = 'vat_output_oss'
+    VAT_OUTPUT_IOSS = 'vat_output_ioss'
+    VAT_OUTPUT_GB = 'vat_output_gb'
+    VAT_INPUT_GB = 'vat_input_gb'
+    VAT_OUTPUT_AU = 'vat_output_au'
+    VAT_OUTPUT_IMPORT = 'vat_output_import'
+    VAT_INPUT_IMPORT = 'vat_input_import'
+    VAT_INPUT_FIXED_ASSET = 'vat_input_fixed_asset'
 
 
 class BooksFiscalYearStateEnum(OpenStrEnum):
@@ -388,6 +469,21 @@ class BooksFixedAssetLinkEnum(OpenStrEnum):
     IMPROVEMENT = 'improvement'
     DISPOSAL_COST = 'disposal_cost'
     DISPOSAL = 'disposal'
+
+
+class BooksInvoiceBankAccountsSourceEnum(OpenStrEnum):
+    """* `override` - override
+    * `default` - default
+    * `automatic` - automatic
+    * `snapshot` - snapshot
+
+    A value this client does not know becomes a member named `_unknown`.
+    """
+
+    OVERRIDE = 'override'
+    DEFAULT = 'default'
+    AUTOMATIC = 'automatic'
+    SNAPSHOT = 'snapshot'
 
 
 class BooksInvoiceDirectionEnum(OpenStrEnum):
@@ -598,6 +694,45 @@ class BooksVatExigibilityEnum(OpenStrEnum):
     PAYMENT = 'payment'
 
 
+class BooksVatRateTypeEnum(OpenStrEnum):
+    """* `standard` - standard
+    * `reduced` - reduced
+    * `zero` - zero
+
+    A value this client does not know becomes a member named `_unknown`.
+    """
+
+    STANDARD = 'standard'
+    REDUCED = 'reduced'
+    ZERO = 'zero'
+
+
+class BooksVatSchemeEnum(OpenStrEnum):
+    """* `oss_union` - oss_union
+    * `ioss` - ioss
+    * `gb_vat` - gb_vat
+    * `au_gst` - au_gst
+
+    A value this client does not know becomes a member named `_unknown`.
+    """
+
+    OSS_UNION = 'oss_union'
+    IOSS = 'ioss'
+    GB_VAT = 'gb_vat'
+    AU_GST = 'au_gst'
+
+
+class BooksVatSupplyKindEnum(OpenStrEnum):
+    """* `goods` - goods
+    * `services` - services
+
+    A value this client does not know becomes a member named `_unknown`.
+    """
+
+    GOODS = 'goods'
+    SERVICES = 'services'
+
+
 class BooksVatTreatmentEnum(OpenStrEnum):
     """* `standard` - standard
     * `reduced` - reduced
@@ -610,6 +745,8 @@ class BooksVatTreatmentEnum(OpenStrEnum):
     * `rc_non_eu` - rc_non_eu
     * `foreign_vat` - foreign_vat
     * `oss` - oss
+    * `foreign_scheme` - foreign_scheme
+    * `import` - import
     * `unknown` - unknown
 
     A value this client does not know becomes a member named `_unknown`.
@@ -626,6 +763,8 @@ class BooksVatTreatmentEnum(OpenStrEnum):
     RC_NON_EU = 'rc_non_eu'
     FOREIGN_VAT = 'foreign_vat'
     OSS = 'oss'
+    FOREIGN_SCHEME = 'foreign_scheme'
+    IMPORT = 'import'
     UNKNOWN = 'unknown'
 
 
@@ -633,6 +772,7 @@ class CompanyStateEnum(OpenStrEnum):
     """* `provisioning` - Provisioning
     * `ready` - Ready
     * `failed` - Failed
+    * `deleted` - Data deleted
 
     A value this client does not know becomes a member named `_unknown`.
     """
@@ -640,6 +780,33 @@ class CompanyStateEnum(OpenStrEnum):
     PROVISIONING = 'provisioning'
     READY = 'ready'
     FAILED = 'failed'
+    DELETED = 'deleted'
+
+
+class DocumentDeletionBlockerCodeEnum(OpenStrEnum):
+    """* `company_data_deleted` - company_data_deleted
+    * `document_legal_hold` - document_legal_hold
+    * `document_system` - document_system
+    * `document_in_use` - document_in_use
+
+    A value this client does not know becomes a member named `_unknown`.
+    """
+
+    COMPANY_DATA_DELETED = 'company_data_deleted'
+    DOCUMENT_LEGAL_HOLD = 'document_legal_hold'
+    DOCUMENT_SYSTEM = 'document_system'
+    DOCUMENT_IN_USE = 'document_in_use'
+
+
+class DocumentDirectionEnum(OpenStrEnum):
+    """* `sale` - Sale
+    * `purchase` - Purchase
+
+    A value this client does not know becomes a member named `_unknown`.
+    """
+
+    SALE = 'sale'
+    PURCHASE = 'purchase'
 
 
 class DocumentsListOrdering(OpenStrEnum):
@@ -664,6 +831,72 @@ class DraftStateEnum(OpenStrEnum):
     DUPLICATE = 'duplicate'
 
 
+class EmployeeSourceEnum(OpenStrEnum):
+    """* `oscar` - OscarAI
+    * `tor_external` - Registered outside OscarAI
+
+    A value this client does not know becomes a member named `_unknown`.
+    """
+
+    OSCAR = 'oscar'
+    TOR_EXTERNAL = 'tor_external'
+
+
+class EmployeeSubmissionKindEnum(OpenStrEnum):
+    """* `new_employee` - New employee
+    * `new_employment` - New employment
+    * `change` - Change
+    * `suspension` - Suspension
+    * `end` - End
+
+    A value this client does not know becomes a member named `_unknown`.
+    """
+
+    NEW_EMPLOYEE = 'new_employee'
+    NEW_EMPLOYMENT = 'new_employment'
+    CHANGE = 'change'
+    SUSPENSION = 'suspension'
+    END = 'end'
+
+
+class EmployeeSubmissionStatusEnum(OpenStrEnum):
+    """* `submitted` - Submitted
+    * `approved` - Approved
+    * `registered` - Registered
+    * `applied` - Applied
+    * `rejected` - Rejected
+
+    A value this client does not know becomes a member named `_unknown`.
+    """
+
+    SUBMITTED = 'submitted'
+    APPROVED = 'approved'
+    REGISTERED = 'registered'
+    APPLIED = 'applied'
+    REJECTED = 'rejected'
+
+
+class EmploymentStatusEnum(OpenStrEnum):
+    """* `draft` - Draft
+    * `submitted` - Submitted
+    * `approved` - Approved
+    * `registered` - Registered
+    * `rejected` - Rejected
+    * `ended` - Ended
+    * `cancelled` - Cancelled in TÖR
+
+    A value this client does not know becomes a member named `_unknown`.
+    """
+
+    DRAFT = 'draft'
+    SUBMITTED = 'submitted'
+    APPROVED = 'approved'
+    REGISTERED = 'registered'
+    REJECTED = 'rejected'
+    ENDED = 'ended'
+    CANCELLED = 'cancelled'
+
+
 class ForwardingConfirmationStatusEnum(OpenStrEnum):
     """* `sent` - sent
 
@@ -671,6 +904,17 @@ class ForwardingConfirmationStatusEnum(OpenStrEnum):
     """
 
     SENT = 'sent'
+
+
+class GoodsLocationEnum(OpenStrEnum):
+    """* `abroad` - abroad
+    * `in_country` - in_country
+
+    A value this client does not know becomes a member named `_unknown`.
+    """
+
+    ABROAD = 'abroad'
+    IN_COUNTRY = 'in_country'
 
 
 class InboundEmailFileRoleEnum(OpenStrEnum):
@@ -807,15 +1051,56 @@ class OutcomeEnum(OpenStrEnum):
     TOO_LARGE = 'too_large'
 
 
+class PartyRoleEnum(OpenStrEnum):
+    """* `supplier` - supplier
+    * `customer` - customer
+
+    A value this client does not know becomes a member named `_unknown`.
+    """
+
+    SUPPLIER = 'supplier'
+    CUSTOMER = 'customer'
+
+
+class PayRunStatusEnum(OpenStrEnum):
+    """* `draft` - Draft
+    * `approved` - Approved
+    * `posting` - Posting
+    * `posted` - Posted
+
+    A value this client does not know becomes a member named `_unknown`.
+    """
+
+    DRAFT = 'draft'
+    APPROVED = 'approved'
+    POSTING = 'posting'
+    POSTED = 'posted'
+
+
+class PensionRateEnum(OpenStrEnum):
+    """* `none` - None
+    * `2` - 2 percent
+    * `4` - 4 percent
+    * `6` - 6 percent
+
+    A value this client does not know becomes a member named `_unknown`.
+    """
+
+    NONE = 'none'
+    V2 = '2'
+    V4 = '4'
+    V6 = '6'
+
+
 class PermissionEnum(OpenStrEnum):
-    """* `organization.read` - organization.read
+    """* `companies.read` - companies.read
     * `members.read` - members.read
     * `api_keys.read` - api_keys.read
     * `audit.read` - audit.read
     * `books.read` - books.read
     * `documents.read` - documents.read
     * `payments.read` - payments.read
-    * `organization.manage` - organization.manage
+    * `companies.manage` - companies.manage
     * `members.manage` - members.manage
     * `api_keys.manage` - api_keys.manage
     * `companies.create` - companies.create
@@ -830,25 +1115,30 @@ class PermissionEnum(OpenStrEnum):
     * `invoices.post_purchase` - invoices.post_purchase
     * `invoices.void` - invoices.void
     * `allocations.write` - allocations.write
+    * `reconciliation.decide` - reconciliation.decide
     * `events.write` - events.write
     * `periods.close` - periods.close
     * `periods.reopen` - periods.reopen
     * `vat.prepare` - vat.prepare
     * `vat.file` - vat.file
     * `payments.manage` - payments.manage
+    * `einvoicing.manage` - einvoicing.manage
+    * `employees.submit` - employees.submit
+    * `foreign_tax.file` - foreign_tax.file
     * `agent.use` - agent.use
+    * `support.use` - support.use
 
     A value this client does not know becomes a member named `_unknown`.
     """
 
-    ORGANIZATION_READ = 'organization.read'
+    COMPANIES_READ = 'companies.read'
     MEMBERS_READ = 'members.read'
     API_KEYS_READ = 'api_keys.read'
     AUDIT_READ = 'audit.read'
     BOOKS_READ = 'books.read'
     DOCUMENTS_READ = 'documents.read'
     PAYMENTS_READ = 'payments.read'
-    ORGANIZATION_MANAGE = 'organization.manage'
+    COMPANIES_MANAGE = 'companies.manage'
     MEMBERS_MANAGE = 'members.manage'
     API_KEYS_MANAGE = 'api_keys.manage'
     COMPANIES_CREATE = 'companies.create'
@@ -863,13 +1153,48 @@ class PermissionEnum(OpenStrEnum):
     INVOICES_POST_PURCHASE = 'invoices.post_purchase'
     INVOICES_VOID = 'invoices.void'
     ALLOCATIONS_WRITE = 'allocations.write'
+    RECONCILIATION_DECIDE = 'reconciliation.decide'
     EVENTS_WRITE = 'events.write'
     PERIODS_CLOSE = 'periods.close'
     PERIODS_REOPEN = 'periods.reopen'
     VAT_PREPARE = 'vat.prepare'
     VAT_FILE = 'vat.file'
     PAYMENTS_MANAGE = 'payments.manage'
+    EINVOICING_MANAGE = 'einvoicing.manage'
+    EMPLOYEES_SUBMIT = 'employees.submit'
+    FOREIGN_TAX_FILE = 'foreign_tax.file'
     AGENT_USE = 'agent.use'
+    SUPPORT_USE = 'support.use'
+
+
+class ReceiptDetailEnum(OpenStrEnum):
+    """* `reading` - reading
+    * `review` - review
+    * `recorded` - recorded
+    * `failed` - failed
+    * `no_extraction` - no_extraction
+
+    A value this client does not know becomes a member named `_unknown`.
+    """
+
+    READING = 'reading'
+    REVIEW = 'review'
+    RECORDED = 'recorded'
+    FAILED = 'failed'
+    NO_EXTRACTION = 'no_extraction'
+
+
+class ReceiptStateEnum(OpenStrEnum):
+    """* `missing` - missing
+    * `receipt_not_booked` - receipt_not_booked
+    * `invoice_not_matched` - invoice_not_matched
+
+    A value this client does not know becomes a member named `_unknown`.
+    """
+
+    MISSING = 'missing'
+    RECEIPT_NOT_BOOKED = 'receipt_not_booked'
+    INVOICE_NOT_MATCHED = 'invoice_not_matched'
 
 
 class RoleEnum(OpenStrEnum):
@@ -900,6 +1225,45 @@ class SkippedAttachmentReasonEnum(OpenStrEnum):
     TOO_MANY = 'too_many'
 
 
+class SocialTaxMinimumEnum(OpenStrEnum):
+    """* `full` - The whole minimum
+    * `prorated` - In proportion to the days
+    * `none` - None
+
+    A value this client does not know becomes a member named `_unknown`.
+    """
+
+    FULL = 'full'
+    PRORATED = 'prorated'
+    NONE = 'none'
+
+
+class TaxAccountAccessStatusEnum(OpenStrEnum):
+    """* `never` - Never refreshed
+    * `ok` - OK
+    * `rights_missing` - Rights missing
+    * `failed` - Failed
+
+    A value this client does not know becomes a member named `_unknown`.
+    """
+
+    NEVER = 'never'
+    OK = 'ok'
+    RIGHTS_MISSING = 'rights_missing'
+    FAILED = 'failed'
+
+
+class TaxAccountNoticeKindEnum(OpenStrEnum):
+    """* `debt` - Debt
+    * `claim_due_soon` - Claim due soon
+
+    A value this client does not know becomes a member named `_unknown`.
+    """
+
+    DEBT = 'debt'
+    CLAIM_DUE_SOON = 'claim_due_soon'
+
+
 class UiModeEnum(OpenStrEnum):
     """* `simple` - Simple
     * `advanced` - Advanced
@@ -922,6 +1286,42 @@ class VatStatusEnum(OpenStrEnum):
     REGISTERED = 'registered'
     LIMITED = 'limited'
     UNREGISTERED = 'unregistered'
+
+
+class WithdrawBlockedByEnum(OpenStrEnum):
+    """* `document_withdrawn` - document_withdrawn
+    * `document_legal_hold` - document_legal_hold
+    * `document_in_use` - document_in_use
+
+    A value this client does not know becomes a member named `_unknown`.
+    """
+
+    DOCUMENT_WITHDRAWN = 'document_withdrawn'
+    DOCUMENT_LEGAL_HOLD = 'document_legal_hold'
+    DOCUMENT_IN_USE = 'document_in_use'
+
+
+class WithdrawableEnum(OpenStrEnum):
+    """* `any` - any
+    * `human_with_reason` - human_with_reason
+    * `no` - no
+
+    A value this client does not know becomes a member named `_unknown`.
+    """
+
+    ANY = 'any'
+    HUMAN_WITH_REASON = 'human_with_reason'
+    NO = 'no'
+
+
+class Absence(OscarModel):
+    """A holiday or a sick leave."""
+
+    id: str
+    kind: AbsenceKindEnum
+    start_date: dt.date
+    end_date: dt.date
+    note: str
 
 
 class BooksAccount(OscarModel):
@@ -1059,8 +1459,12 @@ class BooksBankAccount(OscarModel):
     account_id: str
     """The ledger account of the feed."""
     account_code: str
+    ledger_currency: str | None
+    """The currency the ledger account is kept in; null means the base currency. It can differ from `currency`."""
     is_debtor: bool
     active: bool
+    invoice_position: int | None
+    """The place of the account in the company default of the sales invoices: 1 prints first; null when it is not in the default. Set with `POST .../invoice-bank-accounts`."""
     created_at: dt.datetime
     external_account_id: str | None
     """A payment provider feed: the account at the provider (`acct_…`)."""
@@ -1074,8 +1478,18 @@ class BooksBankAccount(OscarModel):
     """A payment provider feed: the account of funds the provider holds back."""
     customer_party_id: str | None
     """A payment provider feed: the pooled customer party of its receipts."""
+    broker_key: str | None
+    """A broker feed (Lightyear): the key that groups the feeds of one broker account, one per currency."""
+    mmf_account_code: str | None
+    """A broker feed: the account of its money market fund units, in the feed currency."""
     transaction_count: int
+    """The bank transactions of the account, without a transaction removed from the books (`status` `retracted`)."""
+    first_booking_date: dt.date | None
+    """The earliest booking date of a transaction of the account, without a retracted one; null with none."""
     last_booking_date: dt.date | None
+    """The latest booking date of a transaction of the account, a retracted one too (a bank feed starts after it); null with none."""
+    booked_months: list[str]
+    """Each month (`YYYY-MM`) with at least one transaction of the account that is not retracted, in order; empty with none."""
     ledger_balance_minor: int
     """The balance of the ledger account in the feed currency."""
     bank_balance_minor: int | None
@@ -1094,6 +1508,74 @@ class BooksBankAccountPage(OscarModel):
     items: list[BooksBankAccount]
     next_cursor: str | None
     """Send it back as `cursor` for the next page; null on the last page."""
+
+
+class BooksBankCoverageAccount(OscarModel):
+    """A bank account with transactions: the range the payments to explain were checked in."""
+
+    bank_account_id: str
+    name: str
+    """The label of the bank account."""
+    iban: str | None
+    currency: str
+    transaction_count: int
+    """The transactions of the account, without a retracted one."""
+    first_booking_date: dt.date
+    """The earliest booking date of a transaction."""
+    last_booking_date: dt.date
+    """The latest booking date of a transaction: months after it are not checked."""
+    booked_months: list[str]
+    """The months (`YYYY-MM`) with a transaction, in order."""
+    gap_months: list[str]
+    """The months (`YYYY-MM`) between the first and the last booking date with no transaction: not checked."""
+
+
+class BooksBankCoverageUncovered(OscarModel):
+    """A bank account the payments to explain could not be checked in."""
+
+    bank_account_id: str | None
+    """The bank account of the books; null for an account of a bank connection."""
+    name: str
+    iban: str | None
+    currency: str | None
+    reason: BooksBankCoverageUncoveredReasonEnum
+    """`no_bank_lines`: the bank account has no transaction. `feed_not_linked`: an account of a bank connection that feeds no bank account of the books yet.
+
+    * `no_bank_lines` - no_bank_lines
+    * `feed_not_linked` - feed_not_linked
+    """
+
+
+class BooksBankCoverage(OscarModel):
+    """What the payments to explain were checked against: the transactions of the books, per bank account.
+
+    Months and accounts outside it are not checked.
+    """
+
+    accounts: list[BooksBankCoverageAccount]
+    """The bank accounts with transactions, in label order."""
+    uncovered_accounts: list[BooksBankCoverageUncovered]
+    """The accounts with no transaction in the books: not checked."""
+    checked_from: dt.date | None
+    """The earliest first booking date of `accounts`; null with none."""
+    checked_to: dt.date | None
+    """The latest last booking date of `accounts`; null with none."""
+
+
+class BooksBankTransactionInvoiceCandidate(OscarModel):
+    """A posted invoice that fits an open payment (`receipt_state` `invoice_not_matched`)."""
+
+    invoice_id: str
+    number: str | None
+
+
+class BooksBankTransactionRetraction(OscarModel):
+    """The retraction of a bank line: why a person took it out of the books (`retract_bank_transaction`)."""
+
+    reason: str
+    duplicate_of_bank_transaction_id: str | None
+    """The line this one repeats; null when it is no duplicate."""
+    retracted_at: dt.datetime
 
 
 class BooksBankTransaction(OscarModel):
@@ -1139,10 +1621,34 @@ class BooksBankTransaction(OscarModel):
     suspense_residual_minor: int | None
     """The unsettled part of the suspense line; 0 once a judgement (an exemption, a money-in class) clears it; null without one."""
     status: BooksBankTransactionStatusEnum
+    migrated_event_id: str | None
+    """The imported accounting event a `migrated` line is linked to (a migration import); null for every other line."""
     has_document: bool
-    """True when an uploaded file explains the transaction."""
+    """True when a file explains the transaction: an upload for it, or a file of the purchase invoice a payment allocation matched to it."""
     file_ids: list[str]
-    """The sqids of the uploaded files that explain it (`files/{file_id}/`)."""
+    """The sqids of the files that explain it (`files/{file_id}/`): uploads, and the files of matched purchase invoices."""
+    retraction: BooksBankTransactionRetraction | None
+    """Why a `retracted` line is out of the books; null for every other line."""
+    receipt_state: ReceiptStateEnum | None
+    """A payment to explain (money out still open that no file of a matched invoice explains): `missing` (no receipt and no booked invoice), `receipt_not_booked` (a person linked a file, the payment is not booked yet), `invoice_not_matched` (a posted invoice still open fits the payment: a linked file became it, a match proposal names it, or it is the only open invoice of the party with the same amount). Null for every other transaction.
+
+    * `missing` - missing
+    * `receipt_not_booked` - receipt_not_booked
+    * `invoice_not_matched` - invoice_not_matched
+    """
+    receipt_detail: ReceiptDetailEnum | None
+    """`receipt_not_booked` only: `reading` (the file is being read), `review` (its draft waits for a person), `recorded` (the invoice is recorded, not posted), `failed` (the reading failed), `no_extraction` (the file is not read, for example an image or a contract). Null otherwise, and when none of these applies.
+
+    * `reading` - reading
+    * `review` - review
+    * `recorded` - recorded
+    * `failed` - failed
+    * `no_extraction` - no_extraction
+    """
+    match_proposal_id: str | None
+    """`invoice_not_matched` by a match proposal that waits for a person: its sqid; null otherwise."""
+    matched_invoice_candidates: list[BooksBankTransactionInvoiceCandidate]
+    """`invoice_not_matched` only: the posted invoices that fit the payment; empty otherwise."""
 
 
 class BooksBankTransactionEntry(OscarModel):
@@ -1160,7 +1666,66 @@ class BooksBankTransactionEntry(OscarModel):
 class BooksExemption(OscarModel):
     """The exemption that judges a bank transaction."""
 
-    counter_role: BooksExemptionRoleEnum
+    counter_role: BooksExemptionRoleEnum | None
+    """The account role the payment is booked to, or null.
+
+    * `transfer_transit` - transfer_transit
+    * `supplier_prepayment` - supplier_prepayment
+    * `customer_prepayment` - customer_prepayment
+    * `vat_input` - vat_input
+    * `vat_input_rc` - vat_input_rc
+    * `vat_output` - vat_output
+    * `vat_output_rc` - vat_output_rc
+    * `vat_payable` - vat_payable
+    * `vat_non_deductible` - vat_non_deductible
+    * `tax_receivable` - tax_receivable
+    * `expense_default` - expense_default
+    * `software_expense` - software_expense
+    * `hosting_expense` - hosting_expense
+    * `prof_fees` - prof_fees
+    * `travel_expense` - travel_expense
+    * `bank_charges` - bank_charges
+    * `income_default` - income_default
+    * `interest_income` - interest_income
+    * `interest_expense` - interest_expense
+    * `fx_gain` - fx_gain
+    * `fx_loss` - fx_loss
+    * `rounding` - rounding
+    * `payroll_expense` - payroll_expense
+    * `payroll_liability` - payroll_liability
+    * `payroll_tax` - payroll_tax
+    * `grant_liability` - grant_liability
+    * `grant_income` - grant_income
+    * `loan_payable` - loan_payable
+    * `loan_receivable` - loan_receivable
+    * `owner_capital` - owner_capital
+    * `owner_drawings` - owner_drawings
+    * `accrued_expense` - accrued_expense
+    * `prepaid_expense` - prepaid_expense
+    * `deferred_income` - deferred_income
+    * `opening_balance` - opening_balance
+    * `retained_earnings` - retained_earnings
+    * `current_year_result` - current_year_result
+    * `discount_received` - discount_received
+    * `discount_allowed` - discount_allowed
+    * `writeoff` - writeoff
+    * `bad_debt` - bad_debt
+    * `dividend_payable` - dividend_payable
+    * `distribution_tax_expense` - distribution_tax_expense
+    * `distribution_tax_liability` - distribution_tax_liability
+    * `share_capital` - share_capital
+    * `legal_reserve` - legal_reserve
+    * `vat_output_oss` - vat_output_oss
+    * `vat_output_ioss` - vat_output_ioss
+    * `vat_output_gb` - vat_output_gb
+    * `vat_input_gb` - vat_input_gb
+    * `vat_output_au` - vat_output_au
+    * `vat_output_import` - vat_output_import
+    * `vat_input_import` - vat_input_import
+    * `vat_input_fixed_asset` - vat_input_fixed_asset
+    """
+    counter_account_code: str | None
+    """The code of the account the payment is booked to, when the exemption names an account and no role."""
     reason: str
     created_at: dt.datetime
 
@@ -1230,10 +1795,34 @@ class BooksBankTransactionDetail(OscarModel):
     suspense_residual_minor: int | None
     """The unsettled part of the suspense line; 0 once a judgement (an exemption, a money-in class) clears it; null without one."""
     status: BooksBankTransactionStatusEnum
+    migrated_event_id: str | None
+    """The imported accounting event a `migrated` line is linked to (a migration import); null for every other line."""
     has_document: bool
-    """True when an uploaded file explains the transaction."""
+    """True when a file explains the transaction: an upload for it, or a file of the purchase invoice a payment allocation matched to it."""
     file_ids: list[str]
-    """The sqids of the uploaded files that explain it (`files/{file_id}/`)."""
+    """The sqids of the files that explain it (`files/{file_id}/`): uploads, and the files of matched purchase invoices."""
+    retraction: BooksBankTransactionRetraction | None
+    """Why a `retracted` line is out of the books; null for every other line."""
+    receipt_state: ReceiptStateEnum | None
+    """A payment to explain (money out still open that no file of a matched invoice explains): `missing` (no receipt and no booked invoice), `receipt_not_booked` (a person linked a file, the payment is not booked yet), `invoice_not_matched` (a posted invoice still open fits the payment: a linked file became it, a match proposal names it, or it is the only open invoice of the party with the same amount). Null for every other transaction.
+
+    * `missing` - missing
+    * `receipt_not_booked` - receipt_not_booked
+    * `invoice_not_matched` - invoice_not_matched
+    """
+    receipt_detail: ReceiptDetailEnum | None
+    """`receipt_not_booked` only: `reading` (the file is being read), `review` (its draft waits for a person), `recorded` (the invoice is recorded, not posted), `failed` (the reading failed), `no_extraction` (the file is not read, for example an image or a contract). Null otherwise, and when none of these applies.
+
+    * `reading` - reading
+    * `review` - review
+    * `recorded` - recorded
+    * `failed` - failed
+    * `no_extraction` - no_extraction
+    """
+    match_proposal_id: str | None
+    """`invoice_not_matched` by a match proposal that waits for a person: its sqid; null otherwise."""
+    matched_invoice_candidates: list[BooksBankTransactionInvoiceCandidate]
+    """`invoice_not_matched` only: the posted invoices that fit the payment; empty otherwise."""
     raw: JsonValue
     """The source row as the statement parser stored it."""
     entries: list[BooksBankTransactionEntry]
@@ -1241,14 +1830,20 @@ class BooksBankTransactionDetail(OscarModel):
     exemption: BooksExemption | None
     money_in: BooksMoneyIn | None
     transfer_match: BooksTransferMatch | None
+    retractable: bool
+    """False when the books keep this line for good, so `retract_bank_transaction` always refuses it. True does not promise that it passes: the books refuse a line that something still explains, and say what to undo first."""
 
 
 class BooksBankTransactionPage(OscarModel):
-    """One page of BooksBankTransaction items, and the cursor of the next page."""
+    """One page of BooksBankTransaction items, the cursor of the next page, and the coverage of the payments to
+    explain.
+    """
 
     items: list[BooksBankTransaction]
     next_cursor: str | None
     """Send it back as `cursor` for the next page; null on the last page."""
+    coverage: BooksBankCoverage | None
+    """With `to_explain=true` or `receipt_state`: the bank accounts and months the answer checked (the same on every page). Null otherwise."""
 
 
 class BooksDimensionValue(OscarModel):
@@ -1301,9 +1896,14 @@ class BooksDocument(OscarModel):
     legal_hold: bool
     created_at: dt.datetime
     referenced: bool
-    """True when the books refer to the document (an invoice, a statement, an event, a return)."""
+    """True when any record of the books refers to the document: an invoice, a statement, an event, a VAT return, an exchange rate, the dividend facts, a registration or a valuation."""
+    withdrawn: bool
+    """True when the file was deleted: the books keep the record, and nothing links it again."""
+    withdrawn_at: dt.datetime | None
     file_id: str | None
     """The sqid of the stored file (`files/{file_id}/`), or null when none is stored."""
+    stored_filename: str | None
+    """The name of the stored file now, or null when none is stored or it was deleted. A file uploaded again after its deletion has the name of that upload, while `filename` keeps the first one."""
     download_url: str | None
     """The API path that gives a short-lived URL of the bytes (`files/{file_id}/download/`), or null."""
 
@@ -1326,11 +1926,52 @@ class BooksDocumentInvoice(OscarModel):
     role: str
 
 
+class BooksDocumentReference(OscarModel):
+    """One record of the books that refers to a document, and whether it keeps the document in use."""
+
+    kind: str
+    """`invoice`, `accounting_event`, `bank_statement`, `vat_return`, `exchange_rate`, `annual_report`, `unpaid_capital`, `dividend_received`, `dividend_decision`, `vat_registration`, `vat_scheme_registration` or `investment_valuation`."""
+    id: str
+    state: str | None
+    """The state of the record, or null."""
+    role: str | None
+    """An invoice: `original` or `supporting`."""
+    revision_id: str | None
+    """An invoice: the revision that links the document."""
+    revision_no: int | None
+    """An invoice: the number of that revision."""
+    revision_state: str | None
+    """An invoice: `current` or `superseded`."""
+    removed: bool | None
+    """An invoice: true when staff removed the document from the revision."""
+    label: str | None
+    """A short label of the record for people: an invoice gives its number (a purchase invoice: the supplier's number) and its party name, `"{number}, {party}"`, or the party name alone; null for other records."""
+    class_: BooksDocumentReferenceClassEnum = Field(alias='class')
+    """Whether the record keeps the document in use.
+
+    * `live` - live
+    * `permanent` - permanent
+    * `inactive` - inactive
+    """
+
+
 class BooksDocumentStatement(OscarModel):
     """A bank statement that refers to a document."""
 
     statement_id: str
     bank_account_id: str
+
+
+class BooksDocumentStatusEvent(OscarModel):
+    """A withdrawal of a document from the books' use, or its reinstatement by the same file uploaded again."""
+
+    status: BooksDocumentStatusEventStatusEnum
+    reason_code: str | None
+    """`not_company_document`, `wrong_file` or `duplicate`, or null."""
+    reason: str | None
+    created_at: dt.datetime
+    actor_id: str
+    """The core actor."""
 
 
 class BooksDocumentVatReturn(OscarModel):
@@ -1340,6 +1981,38 @@ class BooksDocumentVatReturn(OscarModel):
     form: str
     period_from: dt.date
     revision_no: int
+
+
+class DeletionBlocker(OscarModel):
+    """One thing that stops the deletion of a file."""
+
+    code: DocumentDeletionBlockerCodeEnum
+    """The problem code a deletion would get: `document_in_use` (the books use the file, or a payment match linked it to a bank line), `document_legal_hold`, `document_system` (Oscar stored the file, or keeps it), `company_data_deleted`.
+
+    * `company_data_deleted` - company_data_deleted
+    * `document_legal_hold` - document_legal_hold
+    * `document_system` - document_system
+    * `document_in_use` - document_in_use
+    """
+    kind: str
+    """What blocks: a record of the books (`invoice`, `accounting_event`, `bank_statement`, `vat_return`, `exchange_rate`, `annual_report`, `unpaid_capital`, `dividend_received`, `dividend_decision`, `vat_registration`, `vat_scheme_registration`, `investment_valuation`), a `bank_transaction`, the `company`, the `document` (a legal hold in the books), an `upload` of the system, or the record that keeps the file."""
+    id: str | None
+    """The ULID of a record of the books, or a sqid; null when none."""
+    state: str | None
+    """The state of that record (an invoice: `void`, ...), or null."""
+    label: str | None
+    """A short label of that record for people, or null: an invoice gives its number (a purchase invoice: the supplier's number) and its party name, `"{number}, {party}"`, or the party name alone."""
+
+
+class Deletion(OscarModel):
+    """Whether the file can be deleted now, and what stops it."""
+
+    deletable: bool
+    """True when a member with `documents.write` may delete the file: nothing in the books refers to it."""
+    staff_deletable: bool | None
+    """Firm staff only, null for anyone else: true when staff may delete the file with a reason (the books refer to it only by inactive records: a superseded revision, a void or cancelled invoice, a reversed event, a document removed from an invoice; or a payment match linked it to a bank line)."""
+    blocked_by: list[DeletionBlocker]
+    """What stops the caller's deletion; empty when it may delete the file."""
 
 
 class BooksDocumentDetail(OscarModel):
@@ -1359,15 +2032,40 @@ class BooksDocumentDetail(OscarModel):
     legal_hold: bool
     created_at: dt.datetime
     referenced: bool
-    """True when the books refer to the document (an invoice, a statement, an event, a return)."""
+    """True when any record of the books refers to the document: an invoice, a statement, an event, a VAT return, an exchange rate, the dividend facts, a registration or a valuation."""
+    withdrawn: bool
+    """True when the file was deleted: the books keep the record, and nothing links it again."""
+    withdrawn_at: dt.datetime | None
     file_id: str | None
     """The sqid of the stored file (`files/{file_id}/`), or null when none is stored."""
+    stored_filename: str | None
+    """The name of the stored file now, or null when none is stored or it was deleted. A file uploaded again after its deletion has the name of that upload, while `filename` keeps the first one."""
     download_url: str | None
     """The API path that gives a short-lived URL of the bytes (`files/{file_id}/download/`), or null."""
     invoices: list[BooksDocumentInvoice]
     bank_statements: list[BooksDocumentStatement]
     accounting_events: list[BooksDocumentEvent]
     vat_returns: list[BooksDocumentVatReturn]
+    references: list[BooksDocumentReference]
+    """Every record of the books that refers to the document."""
+    withdrawable: WithdrawableEnum
+    """Who may withdraw the document from the books now: any caller, a person with a reason, or nobody.
+
+    * `any` - any
+    * `human_with_reason` - human_with_reason
+    * `no` - no
+    """
+    withdraw_blocked_by: WithdrawBlockedByEnum | None
+    """What stops the withdrawal, or null.
+
+    * `document_withdrawn` - document_withdrawn
+    * `document_legal_hold` - document_legal_hold
+    * `document_in_use` - document_in_use
+    """
+    status_events: list[BooksDocumentStatusEvent]
+    """The withdrawals and reinstatements of the document, oldest first."""
+    deletion: Deletion | None
+    """Whether the stored file can be deleted now (`POST files/{file_id}/delete/`), and what stops it; null when no file is stored."""
 
 
 class BooksDocumentPage(OscarModel):
@@ -1394,6 +2092,7 @@ class BooksLedgerLine(OscarModel):
     """Signed, debit positive, in `currency`."""
     base_minor: int
     running_base_minor: int
+    """The balance of the account after this line. It counts the lines of the correction pairs too, so it can jump across a line `include_corrections=false` leaves out."""
     memo: str | None
 
 
@@ -1405,7 +2104,11 @@ class BooksLedgerAccount(OscarModel):
     account_name_en: str | None
     """The English name of the account; null when it has none."""
     opening_base_minor: int
+    """The balance before the range, every line counted."""
     closing_base_minor: int
+    """The balance at the end of the range, every line counted, hidden ones too."""
+    hidden_corrections: int
+    """How many lines of the range belong to a correction pair, so how many `include_corrections=false` leaves out. The same number whether they are included or not. The balances count them either way."""
     lines: list[BooksLedgerLine]
 
 
@@ -1415,6 +2118,8 @@ class BooksGeneralLedger(OscarModel):
     base_currency: str
     """The currency of every `*_base_minor` amount: the base currency of the books."""
     accounts: list[BooksLedgerAccount]
+    hidden_corrections: int
+    """The `hidden_corrections` of every account, summed."""
 
 
 class BooksIncomeStatement(OscarModel):
@@ -1434,6 +2139,18 @@ class BooksIncomeStatement(OscarModel):
     """The codes of accounts with a balance and no line of the scheme."""
     from_: dt.date = Field(alias='from')
     to: dt.date
+
+
+class BooksInvoiceReviewDecision(OscarModel):
+    """A person's decision that the review flag of the current revision needs no change (`mark_invoice_reviewed`)."""
+
+    decided_by: str
+    """The core actor who marked the flag as reviewed."""
+    decided_by_name: str
+    """The display name of that actor."""
+    decided_at: dt.datetime
+    note: str | None
+    """The person's note, or null."""
 
 
 class BooksInvoice(OscarModel):
@@ -1478,11 +2195,78 @@ class BooksInvoice(OscarModel):
     base_currency: str
     """The currency of every `*_base_minor` amount: the base currency of the books."""
     needs_review: bool
+    """The current revision is flagged for a person to check (`review_note` says why) and no person marked it as reviewed (`review_decision`)."""
     review_note: str | None
+    """What the checks of the current revision found, or null. With no flag and no `review_decision` it is only information. It stays after a review decision."""
+    review_decision: BooksInvoiceReviewDecision | None
+    """The decision that the review flag of the current revision needs no change: who, when and the note. Null while there is none; a new revision, or a new review note, needs a new decision."""
     open_minor: int | None
     """What is still open of the posted invoice, in its currency: 0 when settled; null while not posted."""
     settlement_state: BooksInvoiceSettlementStateEnum
     """`unposted`, `unpaid`, `part_paid`, `paid`, or `overdue`: unpaid or part paid, due before today."""
+    posted_at: dt.datetime | None
+    """When the current revision was posted to the ledger; null while not posted."""
+
+
+class BooksInvoiceAllocation(OscarModel):
+    """An active allocation that settles a line of the invoice: a payment, a refund, a credit note."""
+
+    id: str
+    kind: BooksAllocationKindEnum
+    origin: str
+    """Who allocated it: `human`, `matcher`, `import` or `migration`."""
+    item_currency: str
+    item_minor: int
+    counter_currency: str
+    counter_minor: int
+    effective_date: dt.date
+    created_at: dt.datetime
+    bank_transaction_id: str | None
+    """The bank transaction of the other side; null when the other side is not a bank line (a credit note)."""
+
+
+class BooksInvoiceBankAccount(OscarModel):
+    """One bank account an invoice prints."""
+
+    bank_account_id: str | None
+    """The bank account; null for an issued invoice, which prints its frozen copy."""
+    label: str | None
+    """The label of the bank account; null for an issued invoice."""
+    iban: str
+    bic: str | None
+    currency: str
+
+
+class BooksInvoiceBankAccountProblem(OscarModel):
+    """Why a draft cannot be issued with the bank accounts a person chose for it."""
+
+    code: str
+    """`invoice_bank_account_unavailable`: the issue refuses with this code."""
+    message: str
+    bank_account_ids: list[str]
+    """The chosen accounts that can no longer print."""
+
+
+class BooksInvoiceBankAccounts(OscarModel):
+    """The bank accounts an own sales invoice prints, in print order, and where the choice comes from."""
+
+    invoice_id: str
+    revision_id: str
+    """The current revision."""
+    currency: str
+    """The currency of the invoice."""
+    source: BooksInvoiceBankAccountsSourceEnum
+    """`override`: the accounts a person chose for this draft; `default`: the company default, those in the invoice currency if any; `automatic`: every active account in the invoice currency, else every active account; `snapshot`: an issued invoice, the accounts it froze.
+
+    * `override` - override
+    * `default` - default
+    * `automatic` - automatic
+    * `snapshot` - snapshot
+    """
+    bank_accounts: list[BooksInvoiceBankAccount]
+    """In print order; the first is the payment account of the e-invoice."""
+    problem: BooksInvoiceBankAccountProblem | None
+    """Null, or the chosen accounts that can no longer print: the issue refuses until a person changes the choice; `bank_accounts` holds the chosen accounts that still print."""
 
 
 class BooksInvoiceBaseVatExchangeRate(OscarModel):
@@ -1530,6 +2314,19 @@ class BooksInvoiceEntry(OscarModel):
     state: BooksEntryStateEnum
 
 
+class BooksInvoiceMigratedFrom(OscarModel):
+    """Where a migrated invoice comes from: the source system and its id, and the journal of the import it is linked to."""
+
+    system: str
+    """The accounting program it was imported from (`e-arveldaja`)."""
+    ref: str
+    """The id of the invoice in that program (`sale_invoices/5658124`)."""
+    entry_id: str
+    """The imported journal entry that posts the invoice. The invoice record posts nothing itself."""
+    open_line_id: str | None
+    """The open item at the cutover that the invoice owns; null when it was settled before the cutover."""
+
+
 class BooksInvoiceDocument(OscarModel):
     """A document attached to an invoice revision."""
 
@@ -1538,6 +2335,12 @@ class BooksInvoiceDocument(OscarModel):
     """`original`, ..."""
     filename: str
     kind: BooksDocumentKindEnum
+    file_id: str | None
+    """The sqid of the stored file (`files/{file_id}/`), or null when none is stored."""
+    download_url: str | None
+    """The API path that gives a short-lived URL of the bytes (`files/{file_id}/download/`), or null."""
+    source: str | None
+    """Where the stored file came from: `email` (the invoice inbox), `upload` (a person), `api` (an API key or an app connected through OAuth), `import` (a migration or a Stripe import), `generated` (made by Oscar) or `other`. More values may come. Null when no file is stored."""
 
 
 class BooksInvoiceLine(OscarModel):
@@ -1552,6 +2355,9 @@ class BooksInvoiceLine(OscarModel):
     """A decimal string."""
     unit: str | None
     unit_price_minor: int | None
+    """The unit price in whole minor units; null on an item line whose price has a fraction of a minor unit."""
+    unit_price: str | None
+    """The unit price in major units, a decimal string of at most 6 decimals without trailing zeros (`150.334`); null on a line without a price."""
     allowance_minor: int
     charge_minor: int
     net_minor: int
@@ -1579,6 +2385,30 @@ class BooksInvoiceLine(OscarModel):
     * `disposal_cost` - disposal_cost
     * `disposal` - disposal
     """
+
+
+class BooksInvoiceRemovedDocument(OscarModel):
+    """A document firm staff removed from the current revision of an invoice."""
+
+    document_id: str
+    role: str
+    """`original` or `supporting`."""
+    replaced_by_document_id: str | None
+    """The document that took its place, in the same role; null for none."""
+    reason_code: str | None
+    """`not_company_document`, `wrong_file` or `duplicate`."""
+    reason: str
+    removed_at: dt.datetime
+    actor_id: str
+    """The core actor who removed it."""
+    file_id: str | None
+    """The sqid of the stored file of the removed document; null when the file was deleted."""
+    filename: str
+    """The name of that stored file; empty when the file was deleted."""
+    replacement_file_id: str | None
+    """The sqid of the stored file of the replacement; null for none, or when the file was deleted."""
+    replacement_filename: str
+    """The name of that stored file; empty for none, or when the file was deleted."""
 
 
 class BooksInvoiceRevision(OscarModel):
@@ -1618,14 +2448,28 @@ class BooksInvoiceRevision(OscarModel):
     source_payload: JsonValue
     """The payload the invoice was recorded from, or null."""
     needs_review: bool
+    """The current revision is flagged for a person to check (`review_note` says why) and no person marked it as reviewed (`review_decision`)."""
     review_note: str | None
+    """What the checks of the revision found, or null. With no flag and no `review_decision` it is only information. It stays after a review decision."""
+    review_decision: BooksInvoiceReviewDecision | None
+    """The decision that the review flag of the current revision needs no change: who, when and the note. Null while there is none; a new revision, or a new review note, needs a new decision."""
     reason: str | None
     customer_note: str | None
     """An own sales invoice: the note printed for the customer."""
+    buyer_contact_name: str | None
+    """An own sales invoice: the buyer's contact person."""
+    order_number: str | None
+    """An own sales invoice: the number of the buyer's order."""
+    contract_number: str | None
+    """An own sales invoice: the number of the contract with the buyer."""
+    buyer_reference: str | None
+    """An own sales invoice: the reference the buyer asks for."""
     prices_include_vat: bool
     """An own sales invoice: the unit prices of the item lines include VAT; the books computed each net."""
     language: str | None
     """An own sales invoice: the language of its document, `et` or `en`; null when unset."""
+    bank_account_ids: list[str] | None
+    """An own sales invoice: the bank accounts this revision prints, in order, as a person chose them; null: the company default (`invoice_position` of the bank accounts), else every active account in the invoice currency. `GET .../invoices/{invoice_id}/bank-accounts/` reads the accounts it prints."""
     base_vat: BooksInvoiceBaseVat | None
     """The VAT in the base currency of a revision in another currency that charges VAT; null otherwise, and for a draft while no rate is known."""
     created_at: dt.datetime
@@ -1634,6 +2478,8 @@ class BooksInvoiceRevision(OscarModel):
     command_id: str
     lines: list[BooksInvoiceLine]
     documents: list[BooksInvoiceDocument]
+    removed_documents: list[BooksInvoiceRemovedDocument]
+    """The documents firm staff removed from this revision, with the reason, oldest first. `documents` leaves them out."""
 
 
 class BooksInvoiceRevisionSummary(OscarModel):
@@ -1713,15 +2559,24 @@ class BooksInvoiceDetail(OscarModel):
     base_currency: str
     """The currency of every `*_base_minor` amount: the base currency of the books."""
     needs_review: bool
+    """The current revision is flagged for a person to check (`review_note` says why) and no person marked it as reviewed (`review_decision`)."""
     review_note: str | None
+    """What the checks of the current revision found, or null. With no flag and no `review_decision` it is only information. It stays after a review decision."""
+    review_decision: BooksInvoiceReviewDecision | None
+    """The decision that the review flag of the current revision needs no change: who, when and the note. Null while there is none; a new revision, or a new review note, needs a new decision."""
     open_minor: int | None
     """What is still open of the posted invoice, in its currency: 0 when settled; null while not posted."""
     settlement_state: BooksInvoiceSettlementStateEnum
     """`unposted`, `unpaid`, `part_paid`, `paid`, or `overdue`: unpaid or part paid, due before today."""
+    posted_at: dt.datetime | None
+    """When the current revision was posted to the ledger; null while not posted."""
     revision: BooksInvoiceRevision
     revisions: list[BooksInvoiceRevisionSummary]
     entries: list[BooksInvoiceEntry]
     settlement: BooksSettlement | None
+    allocations: list[BooksInvoiceAllocation]
+    migrated_from: BooksInvoiceMigratedFrom | None
+    """The source of an invoice a migration import recorded (`origin` `migration`); null otherwise. A migrated invoice is history: it is corrected with a credit note, never revised, cancelled or voided."""
 
 
 class BooksInvoicePage(OscarModel):
@@ -1808,6 +2663,8 @@ class BooksParty(OscarModel):
     """The email address of the party."""
     phone: str | None
     """The phone number of the party."""
+    roles: list[PartyRoleEnum]
+    """What the party is to the company: `supplier` when its kind is supplier or it has a purchase invoice (or an open purchase draft), `customer` when its kind is customer or it has a sales invoice. Void invoices do not count. Empty for a party of another kind with no invoice."""
 
 
 class BooksPartyDefaults(OscarModel):
@@ -1817,6 +2674,12 @@ class BooksPartyDefaults(OscarModel):
     vat_code: str | None
     currency: str | None
     payment_days: int | None
+    language: KycLanguageEnum | None
+    """The language a new own sales invoice to the party starts in; null: no preference.
+
+    * `et` - et
+    * `en` - en
+    """
 
 
 class BooksPartyDetail(OscarModel):
@@ -1850,6 +2713,8 @@ class BooksPartyDetail(OscarModel):
     """The email address of the party."""
     phone: str | None
     """The phone number of the party."""
+    roles: list[PartyRoleEnum]
+    """What the party is to the company: `supplier` when its kind is supplier or it has a purchase invoice (or an open purchase draft), `customer` when its kind is customer or it has a sales invoice. Void invoices do not count. Empty for a party of another kind with no invoice."""
     defaults: BooksPartyDefaults | None
 
 
@@ -1967,6 +2832,35 @@ class BooksVatCode(OscarModel):
     review_state: BooksReviewStateEnum
     exempt_category: str | None
     """An exempt code: `real_estate`, `insurance`, `financial` (counted in the VAT registration turnover) or `other` (not counted); null when not classified (counted)."""
+    special_scheme: BooksVatSchemeEnum | None
+    """The scheme of the code (`oss_union`, `ioss`, `gb_vat` or `au_gst`); null for a code of no scheme. A picker shows such a code only on a date the company is registered for the scheme.
+
+    * `oss_union` - oss_union
+    * `ioss` - ioss
+    * `gb_vat` - gb_vat
+    * `au_gst` - au_gst
+    """
+    member_state: str | None
+    """The state of consumption of a scheme code (`DE`, `EL`, `XI`; `GB` or `AU` for a foreign scheme); else null."""
+    supply_kind: BooksVatSupplyKindEnum | None
+    """A scheme code: `goods` or `services`; else null.
+
+    * `goods` - goods
+    * `services` - services
+    """
+    rate_type: BooksVatRateTypeEnum | None
+    """A scheme code: `standard`, `reduced` or `zero` (a foreign scheme only); else null.
+
+    * `standard` - standard
+    * `reduced` - reduced
+    * `zero` - zero
+    """
+    goods_location: GoodsLocationEnum | None
+    """A foreign scheme code of goods: `abroad` (shipped from Estonia) or `in_country` (held in the UK); null for a service and every other code.
+
+    * `abroad` - abroad
+    * `in_country` - in_country
+    """
     active: bool
     created_at: dt.datetime
     rates: list[BooksVatRate]
@@ -1993,6 +2887,8 @@ class BooksVatPreview(OscarModel):
     """The currency of every `*_base_minor` amount: the base currency of the books."""
     recognitions: int
     """The VAT recognitions the return would include."""
+    due_date: dt.date | None = None
+    """The deadline of the return of the period (the core calendar). A KMD: the 20th of the next month, moved to the next working day after a weekend or a public holiday; null when the period is not one calendar month. An OSS return: the last day of the month after the quarter; an IOSS return: the last day of the month after the month; null when the period is not one quarter or one month."""
 
 
 class CancelInvoiceBodyRequest(OscarModel):
@@ -2022,8 +2918,6 @@ class Company(OscarModel):
     """A company as the API shows it. `core_company_id` is null until provisioning chose it."""
 
     id: str
-    organization_id: str
-    """The sqid of the company's organization, without loading it."""
     name: str
     registry_code: str
     vat_number: str
@@ -2053,14 +2947,21 @@ class CompanyStatus(OscarModel):
 
     bank_lines_to_classify: int
     payments_to_explain: int
-    """Money out still open that no uploaded file explains."""
+    """Money out still open that no file of a matched invoice explains: the payments of `bank-transactions/?to_explain=true`, each with its `receipt_state` (missing, a receipt not booked yet, or an invoice booked and not matched)."""
     documents_to_book: int
     """Uploaded invoices and receipts nothing in the books refers to, recorded purchase invoices not posted, and open drafts."""
     pending_proposals: int
     open_periods: int
     vat_returns_due: int
+    """The VAT returns not filed from the takeover on: a return due on or before the day Oscar took over the books is the previous accountant's and is not counted."""
     next_vat_due_date: dt.date | None
-    """The due date of the next VAT return (KMD): the 20th of a month."""
+    """The due date of the next VAT return (KMD) from the takeover on: the 20th of the next month, moved to the next working day after a weekend or a public holiday."""
+    vat_months_not_checked: int
+    """The VAT months before the takeover with no record of a filed return ("not checked"): never due, never overdue."""
+    vat_not_checked_from: dt.date | None
+    """The first day of the first month not checked; null when none."""
+    vat_not_checked_to: dt.date | None
+    """The first day of the last month not checked; null when none."""
     last_bank_import_at: dt.datetime | None
     overdue_receivables: int
     overdue_receivables_minor: int
@@ -2078,8 +2979,6 @@ class CompanyDetail(OscarModel):
     """
 
     id: str
-    organization_id: str
-    """The sqid of the company's organization, without loading it."""
     name: str
     registry_code: str
     vat_number: str
@@ -2155,6 +3054,159 @@ class CreatePartyPayloadRequest(OscarModel):
     """The phone number of the party. Trimmed; blank is null. At most 40 characters: digits, spaces and `+ - ( ) .`, with at least 5 digits, else 400 `invalid_payload`."""
 
 
+class Employee(OscarModel):
+    """An employee of the company, with the facts of the newest employment. The personal code is masked."""
+
+    id: str
+    first_name: str
+    last_name: str
+    personal_code: str
+    """The masked personal code: `*******` and 4 digits."""
+    birth_date: dt.date | None
+    citizenship: str
+    iban: str
+    email: str
+    basic_exemption: BasicExemptionEnum
+    basic_exemption_minor: int | None
+    pension_rate: PensionRateEnum
+    source: EmployeeSourceEnum
+    employment_type: int | None
+    """The type of the newest employment."""
+    start_date: dt.date | None
+    end_date: dt.date | None
+    status: EmploymentStatusEnum | None
+    registered_outside: bool
+    """Whether TÖR shows an employment of the person, or a change of one, not made through OscarAI."""
+    created_at: dt.datetime
+
+
+class Suspension(OscarModel):
+    """One suspension of an employment, as TÖR holds it."""
+
+    suspension_id: int | None
+    start: dt.date | None
+    end: dt.date | None
+    reason_code: str
+    reason_name: str
+
+
+class Employment(OscarModel):
+    """One employment as TÖR records it, with the status of the workflow. A 601 entry has no rate or workplace."""
+
+    id: str
+    toot_id: int | None
+    """TÖR's id of the employment; null until registered."""
+    employment_type: int
+    """The TÖR type: 1 employment contract, 600 services contract, 601 board member, 501 unpaid work."""
+    employment_type_name: str
+    start_date: dt.date | None
+    end_date: dt.date | None
+    end_reason_code: str
+    work_time_rate: str | None
+    occupation_code: str
+    occupation_name: str
+    """The name of `occupation_code` in the classifier of Statistics Estonia, in the language of the answer (English when the code has an English name); empty when the code is not in the classifier."""
+    workplace_address_id: int | None
+    workplace_address: str
+    """The full address of the workplace building (`workplace_address_id`); empty when unknown."""
+    contract_ref: str
+    gross_salary_minor: int | None
+    """The monthly contract gross, in cents."""
+    board_fee_minor: int | None
+    """The monthly board member fee, in cents."""
+    currency: str
+    suspensions: list[Suspension]
+    tor_state_code: str
+    tor_state_name: str
+    tor_seen_at: dt.datetime | None
+    source: EmployeeSourceEnum
+    status: EmploymentStatusEnum
+    registered_outside: bool
+    """TÖR shows something of it not made through OscarAI."""
+
+
+class EmployeeDetail(OscarModel):
+    """An employee with every employment and its absences."""
+
+    id: str
+    first_name: str
+    last_name: str
+    personal_code: str
+    """The masked personal code: `*******` and 4 digits."""
+    birth_date: dt.date | None
+    citizenship: str
+    iban: str
+    email: str
+    basic_exemption: BasicExemptionEnum
+    basic_exemption_minor: int | None
+    pension_rate: PensionRateEnum
+    source: EmployeeSourceEnum
+    employment_type: int | None
+    """The type of the newest employment."""
+    start_date: dt.date | None
+    end_date: dt.date | None
+    status: EmploymentStatusEnum | None
+    registered_outside: bool
+    """Whether TÖR shows an employment of the person, or a change of one, not made through OscarAI."""
+    created_at: dt.datetime
+    employments: list[Employment]
+    absences: list[Absence]
+
+
+class EmployeeInputRequest(OscarModel):
+    """The person of a new employee, or the changed fields of an employee."""
+
+    first_name: str | None = None
+    last_name: str | None = None
+    personal_code: str | None = None
+    """The Estonian personal code: a new employee only. Sealed, never returned."""
+    birth_date: dt.date | None = None
+    """A new employee with a valid Estonian personal code and no birth date gets the date the code holds."""
+    citizenship: str | None = None
+    iban: str | None = None
+    email: str | None = None
+    basic_exemption: BasicExemptionEnum | None = None
+    basic_exemption_minor: int | None = None
+    pension_rate: PensionRateEnum | None = None
+
+
+class EmploymentInputRequest(OscarModel):
+    """The employment of a start, or the changed fields of an employment."""
+
+    employment_type: int | None = None
+    """The TÖR type: 1 employment contract, 600 services contract, 601 board member, 501 unpaid work."""
+    start_date: dt.date | None = None
+    end_date: dt.date | None = None
+    """A fixed term: the last day, given with a start."""
+    work_time_rate: str | None = None
+    """0.01 to 1.00. Required for type 1."""
+    occupation_code: str | None = None
+    """The occupation code of Statistics Estonia: a selectable 8-digit code of its occupation classifier, else 400."""
+    workplace_address_id: int | None = None
+    """The ADS address id (ADR_ID) of the workplace building."""
+    workplace_address: str | None = None
+    """The full address of that building. Kept by OscarAI for the lists; TÖR takes the id only."""
+    contract_ref: str | None = None
+    gross_salary_minor: int | None = None
+    board_fee_minor: int | None = None
+
+
+class EndInputRequest(OscarModel):
+    """The end of an employment."""
+
+    end_date: dt.date
+    """The last day of the employment."""
+    reason_code: int
+    """The end reason code of the TLP classifier."""
+
+
+class FileDeleteRequest(OscarModel):
+    """The body of the deletion of a file by a member of the company. Every field is optional."""
+
+    reason: str | None = None
+    """Why the file is deleted, kept in the audit log."""
+
+
 class ForwardingConfirmation(OscarModel):
     """The newest Gmail forwarding confirmation that oscarai forwarded to its requester. Never the code or the link."""
 
@@ -2164,6 +3216,15 @@ class ForwardingConfirmation(OscarModel):
     sent_at: dt.datetime | None
     forwarding_works: bool
     """A mail forwarded by the requesting address has arrived since the confirmation was sent."""
+
+
+class HistoryMonth(OscarModel):
+    """One month of the pay history the average pay is taken from."""
+
+    month: str
+    """YYYY-MM"""
+    wages_minor: int
+    days: int
 
 
 class InboundEmailFile(OscarModel):
@@ -2262,7 +3323,7 @@ class InboxOrigin(OscarModel):
     forwarded_by: str
     """The member's address that forwarded the mail through a Gmail filter, empty when none did."""
     unknown_sender: bool
-    """Neither the sender nor the address that forwarded it is a member of the organization."""
+    """Neither the sender nor the address that forwarded it is a member of the company."""
     not_authenticated: bool
     """The DMARC check of the mail failed."""
 
@@ -2284,6 +3345,9 @@ class InvoiceLineRequest(OscarModel):
     quantity: str | None = None
     unit: str | None = None
     unit_price_minor: int | None = None
+    """The unit price in whole minor units. `unit_price` also takes a fraction of a minor unit."""
+    unit_price: str | None = None
+    """The unit price in major units, a decimal string of at most 6 decimals (`150.334`). The books compute the net as quantity x unit price, rounded half up to the minor unit. With `unit_price_minor` too, both must name the same price."""
     allowance_minor: int | None = None
     charge_minor: int | None = None
     net_minor: int | None = None
@@ -2341,6 +3405,14 @@ class InvoiceRevisionRequest(OscarModel):
     """A foreign-currency purchase invoice: the VAT in euro it prints, deducted as printed."""
     customer_note: str | None = None
     """An own sales invoice: a note printed for the customer, at most 2000 characters."""
+    buyer_contact_name: str | None = None
+    """An own sales invoice: the buyer's contact person, one line, at most 100 characters."""
+    order_number: str | None = None
+    """An own sales invoice: the number of the buyer's order, one line, at most 100 characters."""
+    contract_number: str | None = None
+    """An own sales invoice: the number of the contract with the buyer, one line, at most 100 characters."""
+    buyer_reference: str | None = None
+    """An own sales invoice: the reference the buyer asks for, one line, at most 20 characters."""
     prices_include_vat: bool | None = None
     """An own sales invoice: the unit prices, discounts and charges of the item lines include VAT. The books compute the net and the VAT of each line, so the total is the sum of the gross amounts. Every line is an `item` without `net_minor` or `tax_minor`. Default false."""
     language: KycLanguageEnum | None = None
@@ -2351,6 +3423,8 @@ class InvoiceRevisionRequest(OscarModel):
     """
     lines: list[InvoiceLineRequest]
     documents: list[InvoiceDocumentRequest] | None = None
+    bank_account_ids: list[str] | None = None
+    """An own sales invoice: the bank accounts it prints, in order (at most 20); the first is the payment account of the e-invoice. Each must be an active account of the company with an IBAN, not a debtor, named once (400 `invoice_bank_account_invalid`). Null uses the company default, else every active account in the invoice currency. On `revise_invoice` a missing field keeps the choice of the previous revision and null clears it. A purchase invoice refuses it."""
 
 
 class IssueInvoiceBodyRequest(OscarModel):
@@ -2362,6 +3436,14 @@ class IssueInvoiceBodyRequest(OscarModel):
     buyer_snapshot: JsonValue | None = None
     seller_address: str | None = None
     """The seller's postal address frozen into the seller snapshot. Without it the API takes the company's address from the Business Register. A VAT-registered company issues no invoice without the seller's and the buyer's address: 400 `seller_address_missing` or `buyer_address_missing` (EE-VAT-020)."""
+    buyer_contact_name: str | None = None
+    """An own sales invoice: the buyer's contact person, one line, at most 100 characters. A value here replaces the one of the draft; none keeps it."""
+    order_number: str | None = None
+    """An own sales invoice: the number of the buyer's order, one line, at most 100 characters. A value here replaces the one of the draft; none keeps it."""
+    contract_number: str | None = None
+    """An own sales invoice: the number of the contract with the buyer, one line, at most 100 characters. A value here replaces the one of the draft; none keeps it."""
+    buyer_reference: str | None = None
+    """An own sales invoice: the reference the buyer asks for, one line, at most 20 characters. A value here replaces the one of the draft; none keeps it."""
 
 
 class IssueInvoiceResult(OscarModel):
@@ -2389,7 +3471,6 @@ class MeCompany(OscarModel):
     """A company the caller can see."""
 
     id: str
-    organization_id: str
     name: str
     registry_code: str
     vat_number: str
@@ -2400,7 +3481,12 @@ class MeCompany(OscarModel):
     * `provisioning` - Provisioning
     * `ready` - Ready
     * `failed` - Failed
+    * `deleted` - Data deleted
     """
+    role: RoleEnum | None
+    """The role the caller acts with in the company: `owner`, `member` or `viewer`. Firm staff act as owner also where they hold no membership (see `is_member`). Null when the call has no role there."""
+    is_member: bool
+    """Whether the user holds a membership of the company. False for firm staff who see it without one."""
 
 
 class MeCredential(OscarModel):
@@ -2410,7 +3496,7 @@ class MeCredential(OscarModel):
     scopes: list[str] | None
     """The scopes of an API key or an OAuth token; null for a session, which is not narrowed."""
     staff_key: bool
-    """True for a staff API key: a key of no organization that acts as owner in every organization, made in the admin by a superuser. `user` is then its creator."""
+    """True for a staff API key: a key of no company that acts as owner in every company, made in the admin by a superuser. `user` is then its creator."""
 
 
 class MeFeatures(OscarModel):
@@ -2420,16 +3506,18 @@ class MeFeatures(OscarModel):
     """The AI agent. Off, every agent endpoint answers 404 agent_disabled."""
     inbox: bool
     """The invoice inbox, a forwarding address for each company. Off, its endpoints answer 409 inbox_disabled."""
-
-
-class MeOrganization(OscarModel):
-    """An organization the caller can see, with its role there."""
-
-    id: str
-    name: str
-    role: RoleEnum | None
-    is_member: bool
-    """False for staff who see the organization without a membership."""
+    employees: bool
+    """The employee register and its sync with TÖR. Off, its endpoints answer 409 employees_disabled."""
+    payroll: bool | None = None
+    """Payroll and the payroll tax returns (TSD). Off, their endpoints answer 409 payroll_disabled."""
+    kmd_submission: bool | None = None
+    """The VAT return (KMD) is sent to the tax authority over X-tee. Off, the KMD submit answers 503 kmd_submission_disabled: download the file and upload it in e-MTA."""
+    foreign_tax_gb: bool | None = None
+    """UK VAT: the registration of the scheme `gb_vat` and the UK VAT returns. Off, the registration and the `foreign-tax/gb-vat/` endpoints answer 409 foreign_tax_disabled."""
+    foreign_tax_au: bool | None = None
+    """Australian GST: the registration of the scheme `au_gst`, its returns and `au-gst-threshold/`. Off, they answer 409 foreign_tax_disabled."""
+    lightyear: bool | None = None
+    """The Investments screen: the Lightyear account statement upload, the positions and the year-end valuation. Off, every `investments/` endpoint answers 404."""
 
 
 class MeUser(OscarModel):
@@ -2440,7 +3528,7 @@ class MeUser(OscarModel):
     email: str
     name: str
     is_staff: bool
-    """Firm staff: sees every organization as owner."""
+    """Firm staff: sees every company as owner."""
     ui_mode: UiModeEnum
     """The mode of the client dashboard the user chose: simple or advanced.
 
@@ -2450,7 +3538,7 @@ class MeUser(OscarModel):
 
 
 class Me(OscarModel):
-    """`GET /api/me/`: the user, the credential, and the organizations and companies the caller can see."""
+    """`GET /api/me/`: the user, the credential, and the companies the caller can see."""
 
     user: MeUser | None
     """The session user, or the creator of the API key or OAuth grant."""
@@ -2459,30 +3547,32 @@ class Me(OscarModel):
     """True when the user is firm staff but this session did not pass a second factor (TOTP or a passkey): every staff power is off, and the firm API answers 403 mfa_required, until the user logs in with one."""
     email_verified: bool
     credential: MeCredential
-    organizations: list[MeOrganization]
     companies: list[MeCompany]
     features: MeFeatures
     cli_min_version: str | None = None
     """The oldest version of the oscar CLI that may run the onboarding (semver). An older CLI asks the user to update first. Always returned; optional in the schema, so a client keeps working against a server older than the field."""
 
 
-class Organization(OscarModel):
-    """An organization, with the caller's role and effective permissions in it, and its companies.
-
-    Needs the caller's `principal` in the serializer context.
-    """
+class NetPayment(OscarModel):
+    """A payment of an employee's net pay: an allocation in the books."""
 
     id: str
-    name: str
-    role: RoleEnum | None
-    permissions: list[str]
-    companies: list[Company]
-    created_at: dt.datetime
-    updated_at: dt.datetime
+    """The allocation in the books."""
+    state: str
+    effective_date: dt.date
+    """The bank date."""
+    amount_minor: int
+    currency: str
+    bank_transaction_id: str | None
 
 
 class PaginatedCompanyList(OscarModel):
     items: list[Company]
+    next_cursor: str | None
+
+
+class PaginatedEmployeeList(OscarModel):
+    items: list[Employee]
     next_cursor: str | None
 
 
@@ -2491,8 +3581,33 @@ class PaginatedInboundEmailList(OscarModel):
     next_cursor: str | None
 
 
-class PaginatedOrganizationList(OscarModel):
-    items: list[Organization]
+class PayRun(OscarModel):
+    """A pay run: the month, the status, the totals."""
+
+    id: str
+    month: str
+    """YYYY-MM"""
+    payday: dt.date
+    status: PayRunStatusEnum
+    currency: str
+    employee_count: int
+    gross_minor: int | None
+    net_minor: int | None
+    withheld_minor: int | None
+    employer_tax_minor: int | None
+    expense_minor: int | None
+    open_net_minor: int | None
+    """Posted: the net pay not paid yet."""
+    calculation_error: str
+    """A draft: why the calculation of the books failed."""
+    pay_run_id: str | None
+    """Posted: the pay run in the books."""
+    approved_at: dt.datetime | None
+    posted_at: dt.datetime | None
+
+
+class PaginatedPayRunList(OscarModel):
+    items: list[PayRun]
     next_cursor: str | None
 
 
@@ -2516,11 +3631,160 @@ class StoredDocument(OscarModel):
     origin: InboxOrigin | None
     """The mail the file came from, when it came from the invoice inbox; null for an upload."""
     created_at: dt.datetime
+    deleted_at: dt.datetime | None
+    """When the file was deleted, or null. A deleted file keeps its hash, size, kind and dates; its name is empty and its bytes are gone (the content answers 410 `document_deleted`)."""
 
 
 class PaginatedStoredDocumentList(OscarModel):
     items: list[StoredDocument]
     next_cursor: str | None
+
+
+class SubmissionNames(OscarModel):
+    """The words of the codes in `data.employment`, for a person to read."""
+
+    occupation_name: str
+    """The name of `data.employment.occupation_code` in the classifier of Statistics Estonia, in the language of the answer; empty when there is no code or the classifier lacks it."""
+    workplace_address: str
+    """The full address of `data.employment.workplace_address_id`: the submitted text, else the text the employment holds for the same id; empty when unknown."""
+
+
+class TorMessage(OscarModel):
+    """A message of TÖR on a refused event, personal codes masked."""
+
+    type: str
+    """`E` an error, `W` a warning."""
+    field: str
+    code: str
+    description: str
+
+
+class Submission(OscarModel):
+    """A submission and its review: the client reads its status, and the reason of a refusal."""
+
+    id: str
+    kind: EmployeeSubmissionKindEnum
+    status: EmployeeSubmissionStatusEnum
+    event_date: dt.date
+    employee_id: str
+    """The employee of the submission."""
+    employee_name: str
+    """The name of the employee."""
+    employment_id: str
+    data: JsonValue
+    """The submitted values by field name. Never a personal code."""
+    names: SubmissionNames
+    """The words of the codes in `data.employment`."""
+    submitted_at: dt.datetime
+    submitted_by_staff: bool
+    reviewed_at: dt.datetime | None
+    review_reason: str
+    """Why staff rejected it."""
+    toot_id: int | None
+    """TÖR's id of the employment, once registered."""
+    tor_messages: list[TorMessage]
+    """The messages of TÖR on a refused event."""
+    tor_error_code: str
+    """Why the last send to TÖR did not finish; empty when it did."""
+    registered_at: dt.datetime | None
+
+
+class PaginatedSubmissionList(OscarModel):
+    items: list[Submission]
+    next_cursor: str | None
+
+
+class PatchedPartyUpdateRequest(OscarModel):
+    """The body of `PATCH .../parties/{party_id}/`: the fields to change.
+
+    A field left out keeps its value; null or blank clears a field that may be empty. A locked field (`locks` of
+    the party) changes only with `override_reason`, from firm staff; the name of an Estonian company may take
+    `register_name` without one. `is_confirmed: true` confirms the party; false un-confirms it, a person only.
+    A staff key, an agent or an OAuth client that overrides a lock gets 403 `human_actor_required`: it proposes the
+    command `override_party_lock`, and a person of the firm confirms it.
+    """
+
+    name: str | None = None
+    reg_code: str | None = None
+    vat_number: str | None = None
+    country: str | None = None
+    """An ISO 3166 alpha-2 code, for example `EE`."""
+    address: str | None = None
+    """The postal address, one or more lines. At most 500."""
+    email: str | None = None
+    """The email address of the party. At most 254 characters."""
+    phone: str | None = None
+    """The phone number of the party. At most 40 characters."""
+    notes: str | None = None
+    is_confirmed: bool | None = None
+    """True confirms the party; false un-confirms it (a person only)."""
+    override_reason: str | None = None
+    """Firm staff only: why a locked field changes. Written to the audit log. A client gets 403 `override_not_allowed`."""
+
+
+class SickLeave(OscarModel):
+    """The days of one sick leave the run pays, counted from the first day of the leave (day 1)."""
+
+    from_day: int
+    to_day: int
+
+
+class PayRunEmployee(OscarModel):
+    """One employee of a pay run: the inputs, and once posted the result, the open net pay and its payments."""
+
+    id: str
+    employee_id: str
+    employee_name: str
+    currency: str
+    salary_minor: int
+    bonus_minor: int
+    board_fee_minor: int
+    fringe_benefit_minor: int
+    fringe_benefit_code: str
+    """The TSD annex 4 code of the fringe benefits."""
+    holiday_days: int
+    sick_leaves: list[SickLeave]
+    pay_history: list[HistoryMonth] | None
+    """The pay history staff gave; null: taken from the posted runs."""
+    pension_rate_bps: int
+    basic_exemption: BasicExemptionEnum
+    basic_exemption_minor: int | None
+    social_tax_minimum: SocialTaxMinimumEnum
+    social_tax_minimum_days: int | None
+    unemployment_insurance_employee: bool
+    gross_minor: int | None
+    """Posted: the gross pay of the month."""
+    net_minor: int | None
+    """Posted: the net pay."""
+    open_net_minor: int | None
+    """Posted: the net pay not paid yet."""
+    payments: list[NetPayment]
+
+
+class PayRunDetail(OscarModel):
+    """A pay run with every employee."""
+
+    id: str
+    month: str
+    """YYYY-MM"""
+    payday: dt.date
+    status: PayRunStatusEnum
+    currency: str
+    employee_count: int
+    gross_minor: int | None
+    net_minor: int | None
+    withheld_minor: int | None
+    employer_tax_minor: int | None
+    expense_minor: int | None
+    open_net_minor: int | None
+    """Posted: the net pay not paid yet."""
+    calculation_error: str
+    """A draft: why the calculation of the books failed."""
+    pay_run_id: str | None
+    """Posted: the pay run in the books."""
+    approved_at: dt.datetime | None
+    posted_at: dt.datetime | None
+    employees: list[PayRunEmployee]
 
 
 class Problem(OscarModel):
@@ -2575,3 +3839,203 @@ class ReviseInvoiceBodyRequest(OscarModel):
     reason: str
     party_id: str | None = None
     revision: InvoiceRevisionRequest
+
+
+class SetDefaultInvoiceBankAccountsResult(OscarModel):
+    """The result of `set_default_invoice_bank_accounts`."""
+
+    bank_account_ids: list[str]
+    """The default as stored, in print order."""
+    changed: bool
+    """False when the default was this list already."""
+
+
+class SetDefaultInvoiceBankAccountsOutcome(OscarModel):
+    """The `CommandOutcome` of `set_default_invoice_bank_accounts`, with its result."""
+
+    command: str
+    command_id: str
+    """The core id of the command, a ULID."""
+    commit_seq: int
+    """The commit sequence of the file after it."""
+    replayed: bool
+    result: SetDefaultInvoiceBankAccountsResult
+
+
+class SetDefaultInvoiceBankAccountsPayloadRequest(OscarModel):
+    """`set_default_invoice_bank_accounts`: the bank accounts the sales invoices of the company print, in order."""
+
+    bank_account_ids: list[str]
+    """The default, in print order (at most 20). Each must be an active account of the company with an IBAN, not a debtor, named once (400 `invoice_bank_account_invalid`). An invoice prints those in its currency, else all of them. An empty list clears the default: every active account in the invoice currency prints, else every active account. A draft with its own choice keeps it."""
+
+
+class SetInvoiceBankAccountsBodyRequest(OscarModel):
+    """`set_invoice_bank_accounts`: the bank accounts one draft sales invoice prints, in place of the company default."""
+
+    bank_account_ids: list[str] | None
+    """Required: the accounts in print order (at most 20), the first the payment account of the e-invoice, or null to use the company default. Each must be an active account of the company with an IBAN, not a debtor, named once (400 `invoice_bank_account_invalid`). Only a draft (`recorded`) own sales invoice: 409 `invalid_state` otherwise."""
+
+
+class SetInvoiceBankAccountsResult(OscarModel):
+    """The result of `set_invoice_bank_accounts`."""
+
+    bank_account_ids: list[str] | None
+    """The choice as stored, in print order; null: the company default."""
+    changed: bool
+    """False when the draft had this choice already."""
+    invoice_id: str
+    revision_id: str
+
+
+class SetInvoiceBankAccountsOutcome(OscarModel):
+    """The `CommandOutcome` of `set_invoice_bank_accounts`, with its result."""
+
+    command: str
+    command_id: str
+    """The core id of the command, a ULID."""
+    commit_seq: int
+    """The commit sequence of the file after it."""
+    replayed: bool
+    result: SetInvoiceBankAccountsResult
+
+
+class SetPartyAddressBodyRequest(OscarModel):
+    """`set_party_address`: change the postal address of a party. An issued invoice keeps the address it froze."""
+
+    address: str | None = None
+    """The new address; null or blank removes it."""
+
+
+class SetPartyAddressResult(OscarModel):
+    """The result of `set_party_address`."""
+
+    address: str | None
+    """The address as stored, trimmed; null when it was removed."""
+    party_id: str
+
+
+class SetPartyAddressOutcome(OscarModel):
+    """The `CommandOutcome` of `set_party_address`, with its result."""
+
+    command: str
+    command_id: str
+    """The core id of the command, a ULID."""
+    commit_seq: int
+    """The commit sequence of the file after it."""
+    replayed: bool
+    result: SetPartyAddressResult
+
+
+class StoredDocumentDetail(OscarModel):
+    """A stored file of a company, with whether it can be deleted."""
+
+    id: str
+    """The sqid of the file."""
+    kind: BooksDocumentKindEnum
+    name: str
+    content_type: str
+    size_bytes: int
+    sha256: str
+    received_on: dt.date | None
+    core_document_id: str | None
+    """The ULID of the document in the books."""
+    bank_transaction_ids: list[str]
+    """The core ULIDs of the bank transactions this file explains."""
+    uploaded_by: str | None
+    """The sqid of the user who uploaded the file."""
+    origin: InboxOrigin | None
+    """The mail the file came from, when it came from the invoice inbox; null for an upload."""
+    created_at: dt.datetime
+    deleted_at: dt.datetime | None
+    """When the file was deleted, or null. A deleted file keeps its hash, size, kind and dates; its name is empty and its bytes are gone (the content answers 410 `document_deleted`)."""
+    deletion: Deletion
+    """Whether the file can be deleted now (`POST .../delete/`), and what stops it."""
+
+
+class SuspensionInputRequest(OscarModel):
+    """A suspension of an employment."""
+
+    start_date: dt.date
+    reason_code: int
+    """The suspension reason code of TÖR."""
+    end_date: dt.date | None = None
+    first_start_date: dt.date | None = None
+    """When an existing suspension is changed: its first day as TÖR holds it."""
+
+
+class SubmissionRequestRequest(OscarModel):
+    """A new employee, a new employment, a change, a suspension or an end, for staff to review."""
+
+    kind: EmployeeSubmissionKindEnum
+    employee_id: str | None = None
+    """A new employment: the employee."""
+    employment_id: str | None = None
+    """A change, a suspension, an end: the employment."""
+    employee: EmployeeInputRequest | None = None
+    employment: EmploymentInputRequest | None = None
+    suspension: SuspensionInputRequest | None = None
+    end: EndInputRequest | None = None
+    event_date: dt.date | None = None
+    """A change: the day it applies from. Default today."""
+
+
+class TaxAccountClaim(OscarModel):
+    """One open claim of the tax account (`balanceOfClaimTypes`)."""
+
+    claim_type_code: str
+    """EMTA's claim type, for example `KM` (VAT)."""
+    tax_period_code: str
+    document_nr: str
+    document_type_code: str
+    """`KMD` or `TSD`, as EMTA names it."""
+    claim_identifier: str
+    balance: str | None
+    """The balance of the claim. Above zero: the company owes it."""
+    tax_period_end: dt.date | None
+    due_date: dt.date | None
+    """The due date, from the stored movements of the claim; null when unknown."""
+
+
+class TaxAccountNotice(OscarModel):
+    """A notice for the client: a tax debt, or a claim due within 7 days."""
+
+    kind: TaxAccountNoticeKindEnum
+    amount: str
+    due_date: dt.date | None
+    claim_type_code: str
+    """Empty for a debt."""
+    tax_period_code: str
+    document_nr: str
+
+
+class TaxAccountBalance(OscarModel):
+    """The tax account of the company at EMTA, from the stored copy of the last successful refresh."""
+
+    access_status: TaxAccountAccessStatusEnum
+    """How the last refresh went: `ok`; `rights_missing`, the company has not granted `ACCOUNTING_XROAD` to OscarAI in e-MTA; `failed`; `never`, no refresh yet.
+
+    * `never` - Never refreshed
+    * `ok` - OK
+    * `rights_missing` - Rights missing
+    * `failed` - Failed
+    """
+    access_error_code: str
+    """The code of the last failure; empty when ok."""
+    last_attempt_at: dt.datetime | None
+    last_success_at: dt.datetime | None
+    as_of: dt.datetime | None
+    """When the stored copy was read from EMTA; null before the first read."""
+    request_date: dt.date | None
+    """The day of the balance at EMTA."""
+    total: str | None
+    """The balance of the claims. Above zero: the company owes it."""
+    interest: str | None
+    """The interest on the taxes not paid in time."""
+    prepayment_balance: str | None
+    """The balance of the prepayment account (E)."""
+    account_balances: dict[str, str]
+    """The balance of each account by its EMTA code (E: the prepayment account)."""
+    claims: list[TaxAccountClaim]
+    notices: list[TaxAccountNotice]
+    refresh_pending: bool
+    """A refresh is queued or running."""

@@ -13,7 +13,7 @@ from oscaraccountant._base_url import normalize_base_url, resolve_base_url
         ('http://localhost:3500', 'http://localhost:3500'),
         ('http://127.0.0.1:3500/', 'http://127.0.0.1:3500'),
         ('http://[::1]:3500', 'http://[::1]:3500'),
-        ('http://omarchy.personal:3500', 'http://omarchy.personal:3500'),
+        ('http://devbox.personal:8080', 'http://devbox.personal:8080'),
         ('  https://api.example.com  ', 'https://api.example.com'),
     ],
 )

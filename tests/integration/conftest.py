@@ -34,7 +34,6 @@ class MockServer:
     url: str
     api_key: str
     company_id: str
-    organization_id: str
     resource: str
 
     def control(self, method: str, path: str, body: object = None) -> Any:
@@ -96,7 +95,6 @@ def mock_server(tmp_path_factory: pytest.TempPathFactory) -> Iterator[MockServer
         url=info['url'],
         api_key=info['api_key'],
         company_id=info['company_id'],
-        organization_id=info['organization_id'],
         resource=info['resource'],
     )
     try:
